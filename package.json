@@ -1,0 +1,19 @@
+{
+  "name": "miku-repo-scale",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deterministic repository scale analysis for program code, agent instructions, and definitions.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igapyon/miku-repo-scale.git"
+  },
+  "homepage": "https://github.com/igapyon/miku-repo-scale#readme",
+  "bugs": {
+    "url": "https://github.com/igapyon/miku-repo-scale/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
