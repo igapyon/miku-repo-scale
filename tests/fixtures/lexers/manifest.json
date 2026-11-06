@@ -1,0 +1,48 @@
+{
+  "format": "miku-repo-scale.rsc-02-fixtures/v1",
+  "description": "Hand-authored acceptance inputs for RSC-02 parser selection; implementation tests will consume these fixtures in RSC-08 through RSC-12.",
+  "offset_unit": "UTF-16 code units in the original source text",
+  "fixtures": [
+    {
+      "path": "javascript-tsx.tsx",
+      "language": "typescript",
+      "dialect": "tsx",
+      "valid": true,
+      "comments": ["// JavaScript line comment", "/* template expression comment */"],
+      "original_ranges": [[51, 77], [154, 187]]
+    },
+    {
+      "path": "python-pep701.py",
+      "language": "python",
+      "dialect": "python-3",
+      "valid": true,
+      "comments": ["# inline f-string comment"],
+      "original_ranges": [[46, 71]]
+    },
+    {
+      "path": "java-text-block.java",
+      "language": "java",
+      "dialect": "java-17",
+      "valid": true,
+      "comments": ["// Java source comment"],
+      "original_ranges": [[148, 170]]
+    },
+    {
+      "path": "java-unicode-escapes.java",
+      "language": "java",
+      "dialect": "java-17",
+      "valid_after_jls_3_3_translation": true,
+      "comments_after_translation": ["/* translated block comment */", "// translated line comment "],
+      "original_ranges": [[32, 82], [100, 137]]
+    },
+    {
+      "path": "shell-heredoc.bash",
+      "language": "shell",
+      "dialect": "bash",
+      "valid": true,
+      "comments": ["# command substitution comment", "# shell source comment"],
+      "non_comments": ["# here-document data, not a shell comment", "${HOME#prefix}"],
+      "original_ranges": [[89, 119], [126, 148]]
+    }
+  ]
+}

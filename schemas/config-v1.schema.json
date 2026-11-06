@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/igapyon/miku-repo-scale/schemas/config-v1.schema.json",
+  "title": "miku-repo-scale config v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "rules"],
+  "properties": {
+    "schema_version": { "const": "miku-repo-scale.config/v1" },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["match"],
+        "properties": {
+          "match": { "type": "string", "minLength": 1 },
+          "category": { "enum": ["generated", "test", "source", "documentation", "configuration", "other"] },
+          "role": { "enum": ["instruction", "implementation", "definition", "documentation", "data", "unknown"] },
+          "language": { "enum": ["java", "javascript", "typescript", "python", "shell", "text", "html", "json", "jsonl", "markdown", "yaml", "unknown", "shell-sh", "shell-bash", "shell-zsh"] },
+          "encoding": { "enum": ["utf-8", "utf-16le", "utf-16be"] }
+        }
+      }
+    }
+  }
+}

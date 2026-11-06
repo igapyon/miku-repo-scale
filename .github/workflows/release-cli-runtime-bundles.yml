@@ -1,0 +1,68 @@
+name: Release CLI/runtime bundles
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release-cli-runtime-bundles:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG_NAME: ${{ github.ref_name }}
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Set up release build Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          package-manager-cache: false
+
+      - name: Validate release tag
+        run: node scripts/stage-release-assets.mjs --validate-only
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Build bundles and test packaging
+        run: npm test
+
+      - name: Smoke test CLI bundle
+        run: npm run smoke:bundle
+
+      - name: Smoke test runtime bundle
+        run: npm run smoke:runtime
+
+      - name: Stage versioned release assets
+        run: npm run stage:release
+
+      - name: Set up minimum supported Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Verify final staged assets on Node.js 22
+        run: npm run check:release
+
+      - name: Upload prepared release assets
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: release-assets/*
+          fail_on_unmatched_files: true
+          overwrite_files: true

@@ -29,8 +29,8 @@ empty target workplace. Sister source trees and older compatibility baselines
 were not copied. Node-only scope follows the user: no Java companion/backend.
 
 The main app stays JavaScript ESM rather than adopting the sister's TypeScript
-toolchain. Its initial source/build/test entrypoints are deferred to the planned
-tasks, so no empty test run is presented as product validation. The skill uses
+toolchain. Its source/build/test entrypoints and M1 measurement core are in
+place. The skill uses
 the shared starter's packaging skeleton, which rejects missing declared runtime.
 The initial upstream filename is a receipt target, not verified runtime identity.
 
@@ -47,15 +47,56 @@ Workflow preparation uses the current official
 [action-gh-release v3](https://github.com/softprops/action-gh-release/releases/tag/v3.0.3)
 lines. Hosted workflows have not been run.
 
-The operational `10-node-app-workflow.md` uses `release: published`; the basic
-main-app design has a conflicting tag-push example. Follow the workflow-specific
-execution contract, keep this discrepancy recorded, and do not silently mix triggers.
+At initial implementation, the operational `10-node-app-workflow.md` used
+`release: published`, while the basic main-app design showed tag push. The
+requested product behavior is tag push; the active workflow now uses
+`push.tags: ["v*"]` and does not also run on Release published.
 Product path ordering retains the explicitly documented UTF-8 byte contract in
 the product design; the shared UTF-16 preference is not silently substituted.
 
 ## Verification record
 
 Initial verification covers metadata and local links, script syntax, and the
-missing-runtime build rejection. Product tests, artifact execution, isolated
-bundle smoke, minimum-Node execution, and hosted CI remain pending. Exact commands
-and results are recorded after scaffold placement in development notes.
+missing-runtime build rejection. It predates the M1 implementation. Current M1
+tests and artifact execution are recorded in development.md. Node 22 and 26
+have passed locally; Node 24 execution and hosted CI remain pending.
+
+## Release infrastructure maintenance (2026-11-06)
+
+Profile: Node main application, Release assets. Used the installed
+`igapyon-miku-soft-developer` maintenance workflow, `10-node-app-workflow.md`,
+repository operations, and the repository-conventions baseline.
+The installed SKILL and Node workflow digests remain the values recorded above.
+Shared-source checkout HEAD at this inspection:
+`c715d69d55d823c5ecf2b25a24d045b322085c33` (context, not an installed-file revision claim).
+
+Same-layer local references:
+
+- `miku-indexgen`, HEAD `daf1e2b07f41e63a7e641ce18a6cdebfd3ec75d9`:
+  esbuild ESM bundling, separate build helper, isolated CLI smoke, and curated sources.
+- `miku-text-bundle`, HEAD `58cef5fcb190b10995a633ec60434013c901932b`:
+  package-script orchestration and Release asset naming/staging.
+
+Their older Action versions, product Node minimums, tag/manual triggers, and
+single-CLI-only artifact shapes were evaluated against the current owning
+workflow. This project now uses a `v*` tag-push trigger and exact tag checkout,
+CLI/runtime/source assets, a Node 26 build host, and final staged-byte checks
+on Node 22. The M1 runtime exports the analysis API and metadata; language-aware
+code/comment classification remains planned.
+
+Current primary references checked:
+
+- [Node.js release schedule](https://github.com/nodejs/Release/blob/main/schedule.json):
+  Node 26 entered LTS on 2026-10-28; Node 22 remains maintained.
+- [setup-node](https://github.com/actions/setup-node): checkout/setup-node v7 examples.
+- [action-gh-release](https://github.com/softprops/action-gh-release): v3 and prepared asset upload.
+- [esbuild API](https://esbuild.github.io/api/): ESM bundling with a Node target.
+  npm registry metadata confirmed esbuild 0.28.2, MIT; adopted as a pinned build-only dependency.
+- [git-check-ignore](https://git-scm.com/docs/git-check-ignore): tracked-path evaluation
+  via `--no-index`, verbose rule evidence, negation, and NUL-delimited records.
+
+Adjacent approved maintenance adopted: clean staging, an exact final-file set,
+minimum-runtime verification, and least-authority workflow permissions. The
+later self-review correction changes the trigger to tag push. Local actionlint,
+Node 24 execution, and hosted OS/Node acceptance remain pending; the run record
+is in development.md.

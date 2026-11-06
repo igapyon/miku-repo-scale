@@ -1,6 +1,6 @@
-# miku-repo-scale：Node.js によるソフトウェア規模計測スキルの初期設計
+# miku-repo-scale：Node.js によるリポジトリ規模・構成計測の初期設計
 
-2026-11-05。状態：設計案。runtime と installable skill は未実装。
+2026-11-05設計、2026-11-06更新。状態：M1 実装は自己レビュー修正と全体再受入の途中。[6件の対応計画](self-review-remediation-plan.md)を進めており、物理行 offset helper と basename/shebang 分類は実装済み。atomic filesystem 境界、`--inventory all` / `--output` の path race audit は未完了。JavaScript / TypeScript / JSX / TSX の字句解析を接続し、Python / Java / Shell と installable skill は後続作業。
 
 実装作業は [Node.js 初期版の実装計画](implementation-plan.md) の RSC-00〜15 に分解した。
 
@@ -14,13 +14,19 @@
 
 Git リポジトリを指定すると、その作業ツリーについて、次を返す。
 
-- 全体のファイル数・バイト数・物理行数。
+製品の中心は、リポジトリに含まれる資産全体の規模と構成を把握することである。
+全体の summary と、ソースコード・Agent 指示・定義等の部分集合を提供する。
+文書、HTML、プレーンテキスト、JSON/JSONL のデータ、バイナリも全体像に含める。
+初期の既定範囲は Git tracked の作業ツリーで、未追跡・ignored の metadata を
+含める場合は節3.1.1の inventory 範囲を明示する。
+
+- 全体のファイル数・バイト数と、テキストの物理行数。
 - 本体、テスト、文書、設定、生成物、その他の内訳。
 - 言語別のファイル数・物理行数・コード行数・コメント行数。
 - Markdown・JSON・YAML を含む、動作を決めるソースの指示・実装・定義別の規模。
 - 計測できた範囲と、未対応・除外・読み取り失敗の内訳。
 
-生成 AI の開発資産として重視する初期対応拡張子は、`.md`、`.mjs`、`.json`、`.yml`、`.yaml`、`.js`、`.ts`、`.py` とする。JSON はファイル数・bytes・物理行数・非空白行数、TypeScript はそれらに加えてコード・コメント行数まで計測する。関連拡張子と従来言語の対応範囲は節4・節5.2に定める。
+初期対応形式には `.txt`、`.html`、`.json`、`.jsonl`、`.md`、`.yml`、`.yaml` と、`.mjs`、`.js`、`.ts`、`.py` 等を含める。テキスト全般にファイル数・bytes・物理行数・空白行数・非空白行数を提供し、対応するプログラム言語へコード・コメント行数を追加する。拡張子が未知または存在しないファイルも、binary 判定・厳密 decode・上限の条件を満たせば基本計測する。関連拡張子と字句解析の対応範囲は節4・節5.2に定める。
 
 本体の規模を尋ねられた場合は `source` を主に示し、テストと生成物を別に表示する。`source` にはプログラム実装だけでなく、役割が確認できる Agent の指示と動作定義も含める。リポジトリ全体の規模を尋ねられた場合は全カテゴリを示す。生成物を含む大量の行数を、手書きの本体コードの規模として説明しない。
 
@@ -66,20 +72,50 @@ Git の収集 adapter は `git -C <root> ls-files --cached --stage -z` の出力
 | 対象 | 初期版の扱い |
 | --- | --- |
 | 通常の tracked file | 作業ツリーの bytes を読み計測 |
-| untracked / ignored のみのファイル | 収集しない。既に tracked のものは ignore 規則で除かない |
+| untracked / ignored のみのファイル | 既定では収集しない。明示した全体 inventory では metadata のみ収集。既に tracked のものは ignore 規則で除かない |
 | index に残り作業ツリーから削除されたファイル | `FILE_MISSING`。0 bytes として成功扱いしない |
 | unmerged path | `UNMERGED_PATH`。各 stage の合算や任意 stage の採用をしない |
 | symlink / Windows reparse point | 追跡しない。項目として報告し、リンク先を読まない |
 | submodule | gitlink を1項目として報告。内部のファイル数へ換算しない |
-| binary | bytes のみ計上。行数は `null` |
+| binary | 名前・拡張子・サイズ・追跡状態・ignore 判定を記録。読取 bytes を計上し、行数は `null` |
 | sparse checkout で欠けたファイル | `FILE_MISSING` として計測不足を明示 |
 | bare repository / Git repository 外 | hard error |
 
-Git index の symlink mode に加えて実ファイルの種類も調べる。通常ファイルから symlink への置換、親ディレクトリのリンク化、対象ルート外への解決を検出した場合はその path を読まない。Git subprocess は引数配列で起動し、対象内の設定ファイルを JavaScript として実行しない。
+Git index の symlink mode に加えて実ファイルの種類も調べる。通常ファイルから symlink への置換、親ディレクトリのリンク化、対象ルート外への解決を見つけた場合はその path を読まない。Git subprocess は引数配列で起動し、対象内の設定ファイルを JavaScript として実行しない。
+
+現実装の `src/file-access.mjs` は親 path を複数回照合し、open 後・read 前にも再検査する。指定した3時点に親 symlink を差し替える regression では外部 sentinel を読まない。ただし Node.js の標準 fs API による path-based `lstat` と `open` の列は原子的な directory-relative open ではないため、この検査を任意の同時 rename に対する containment 保証とは扱わない。`--inventory all` の再帰走査と `--output` の保存先も個別 audit が必要であり、M1 の security acceptance は保留する。
 
 path はルート相対、区切りは `/`、大小文字と Unicode 表現は保存する。不正 UTF-8 path は置換して別 path にせず `PATH_ENCODING_UNSUPPORTED` とし、元 bytes の base64 を診断に残す。
 
 読取前後のファイル情報と収集前後の index 一覧を照合する。変化を検出したら `INPUT_CHANGED` とし、結果を完全成功にしない。これは同時書込に対する完全な snapshot 保証ではない。再現比較は静止した同一 bytes・同一設定・同一 runtime/ruleset で行う。
+
+### 3.1.1 バイナリと ignore の metadata（追加要件）
+
+テキスト行数が得られないファイルも、リポジトリの構成資産として扱う。
+通常ファイルの各 entry に相対 `path`、`name`、大小文字を保つ `extension`、
+stat 時点の `size_bytes`、`git.tracked`、`git.ignore` を記録する。
+画像・音声・PDF・archive 等も同じ metadata を持つ。種類は拡張子だけで断定しない。
+`size_bytes` は観測したファイルサイズであり、実際に読めた `metrics.bytes` と分ける。
+stat 失敗時はサイズを `null` とし、symlink のリンク先サイズを取得しない。
+
+追跡状態と「ignore 規則により無視されるはずの path か」は独立である。
+`git.ignore.would_ignore` と、最終的に適用される規則の source kind、相対 source、
+行番号、pattern を保存する。`.gitignore`（root/配下）、`info/exclude`、global exclude
+を区別し、否定規則も反映する。global exclude の絶対 path は結果へ保存しない。
+判定不能は `null` と診断で表す。tracked かつ ignore 規則に一致するバイナリも、
+tracked の計測対象として残す。
+
+実装では [git-check-ignore](https://git-scm.com/docs/git-check-ignore) の
+`--no-index --verbose --non-matching -z --stdin` を用い、空白・改行入り path や
+否定規則を NUL 区切りで扱う。`--no-index` は追跡状態の判定には使わず、
+追跡状態は index から独立に取得する。
+
+収集範囲は `--inventory tracked|all` で明示する（既定 `tracked`）。
+`all` は未追跡・ignored の通常ファイルも metadata 一覧へ追加するが、その内容を
+decode・字句解析せず、`measurement: skipped` と `skip_reason: untracked_metadata_only`
+で示す。`.git` 内部とリンク先は走査しない。これらのサイズと件数は
+`metadata_only_entries` の小計へ分け、tracked の計測 coverage・行数へ混ぜない。
+既定の一覧に存在しないことを「ignored バイナリが存在しない」という意味にはしない。
 
 ### 3.2 絞り込み
 
@@ -96,7 +132,7 @@ path はルート相対、区切りは `/`、大小文字と Unicode 表現は�
 
 言語識別は明示設定、既知の basename、拡張子、拡張子のないファイルの既知 shebang の順で行う。拡張子は大小文字を区別し、未知の拡張子へ内容から言語を推測適用しない。初期の既知 basename は `.bashrc` / `.bash_profile` / `.zshrc` / `.zprofile`。shebang は固定リストの `sh` / `bash` / `zsh` / `python` / `python3` / `node` と、`/usr/bin/env <name>` の単純形を扱う。複雑な shebang は診断して上書き指定へ案内する。
 
-形式 registry には初期版から `markdown`（`.md` / `.markdown`）、`json`（`.json`）、`yaml`（`.yml` / `.yaml`）を含める。`.mjs` / `.js` は `javascript`、`.ts` / `.mts` / `.cts` / `.tsx` は `typescript`、`.py` は `python` に集約するが、拡張子別の集計も保持する。
+形式 registry には初期版から `text`（`.txt`）、`html`（`.html` / `.htm`）、`json`（`.json`）、`jsonl`（`.jsonl` / `.ndjson`）、`markdown`（`.md` / `.markdown`）、`yaml`（`.yml` / `.yaml`）を含める。`.mjs` / `.js` は `javascript`、`.ts` / `.mts` / `.cts` / `.tsx` は `typescript`、`.py` は `python` に集約するが、拡張子別の集計も保持する。registry にない拡張子のテキストは `language: unknown` として基本計測し、実際の拡張子も保存する。
 
 ### 4.1 動作を決めるソースの役割
 
@@ -106,10 +142,13 @@ path はルート相対、区切りは `/`、大小文字と Unicode 表現は�
 | `implementation` | プログラムの実装 | `.mjs`、`.js`、`.ts`、`.py`、`.java` 等 |
 | `definition` | 動作や接続を宣言する定義 | Agent 設定、workflow、tool schema として指定した `.json` / `.yml` |
 | `documentation` | 人間向けの説明・設計資料 | README、一般の説明用 Markdown |
-| `data` | 入力・評価例・データ | 明示指定した JSON の入力例や fixture |
-| `unknown` | 上記の役割を確定できないもの | 用途が指定されていない JSON / YAML 等 |
+| `data` | 入力・評価例・データ | 明示指定した JSON/JSONL の入力例や fixture |
+| `unknown` | 上記の役割を確定できないもの | 用途が指定されていない TXT / HTML / JSON / JSONL / YAML 等 |
 
 役割の優先順は config の明示値、既知の path/basename、プログラミング言語の実装、文書形式の既定値、`unknown` とする。既知規則は `SKILL.md` / `AGENTS.md` を instruction、`**/agents/openai.yaml` と root の `.github/workflows/*.yml` / `*.yaml` を definition とする。後者は通常の開発自動化も含む。JSON/YAML の拡張子だけでは動作定義かデータかを確定しない。通常の `.md` は documentation とし、プロンプトや指示 reference の path は config で指定できる。
+
+TXT / HTML / JSONL も path・明示指定に応じて文書、データ、定義等の役割を持つ。
+役割が `unknown` でも、ファイル数・bytes・基本行数は全体の計測に含める。
 
 これは生成 AI が作成したファイルかどうかの分類ではない。従来のプログラムにも Agent システムにも同じ role を適用し、拡張子を「従来型専用」「生成 AI 専用」に分断しない。自動判定と利用者指定を `role_reason` で区別する。
 
@@ -151,6 +190,12 @@ path はルート相対、区切りは `/`、大小文字と Unicode 表現は�
 
 `bytes` は読めた通常ファイルの元のバイト数で、BOM・改行を含む。decode 後の文字数とは区別する。binary は bytes に含む。symlink / gitlink の参照先サイズは含めない。
 
+基本行数は形式の構文解析に依存させず、厳密 decode に成功したテキストへ共通に適用する。
+JSON / JSONL / HTML の構文が不正でも、decode できる元テキストの行数は計測できる。
+JSONL は物理行数を数え、JSON record 件数や妥当性を推定しない。
+HTML はファイルの元テキストを数え、描画後の文字数や DOM 要素数へ変換しない。
+埋込 script / style も物理行を1回だけ数える。
+
 改行は CRLF、LF、単独 CR。CRLF を2行としない。空ファイルは0行、末尾改行の直後に余分な1行を作らない。例：`a` と `a\n` は1行、`\n` は1行、`a\n\n` は2行。先頭 BOM を取り除いた後に数えるため、BOM のみのファイルは0行。
 
 空白行は、改行を除いた内容が空、または space / tab / form feed / vertical tab のみの行。コメントや複数行文字列の途中でも、物理的に空白だけなら空白行を優先する。その他の Unicode 空白や U+2028/U+2029 はこの物理行定義の区切り・空白に加えない。字句解析器には別途、言語仕様上の行終端としての扱いが必要になる。
@@ -186,9 +231,13 @@ lines_with_comments = comment_only_lines + mixed_code_comment_lines
 | `python` | `.py` | `#`、単・二重・triple quote、raw / bytes / f-string と埋込式 |
 | `shell` | `.sh` / `.bash` / `.zsh` | 単・二重 quote、escape、token 境界の `#`、parameter / command substitution、heredoc |
 
-`.jsx` / `.tsx` のモードは拡張子から固定する。Shell と識別済みのファイルでは拡張子があっても shebang を調べ、dialect を決める。`.sh` は既知 shebang の `sh` / `bash` / `zsh` を採用し、shebang がなければ `sh` とする。`.bash` / `.zsh` や既知 basename が示す dialect と shebang が相反した場合は basic metrics と診断を返す。config の明示 language ID は dialect を選べる `shell-sh` / `shell-bash` / `shell-zsh` も受け付け、集計 language は `shell` に統合する。Python 等の対象文法版と対応構文表は、実装時に scanner ごとに固定し、`ruleset_version` とともに記録する。
+`.jsx` / `.tsx` のモードは拡張子から固定する。Shell と識別済みのファイルでは拡張子があっても shebang を調べ、dialect を決める。`.sh` は既知 shebang の `sh` / `bash` / `zsh` を採用し、shebang がなければ `sh` とする。`.bash` / `.zsh` や既知 basename が示す dialect と shebang が相反した場合は basic metrics と診断を返す。config の明示 language ID は dialect を選べる `shell-sh` / `shell-bash` / `shell-zsh` も受け付け、集計 language は `shell` に統合する。RSC-02 の選定では Bash grammar を Bash と共通 POSIX 構文の解析に使い、Zsh の字句解析は未対応とした。対応する grammar・dialect・syntax scope は [language-support.md](language-support.md) に記録し、`ruleset_version` とともに維持する。
 
 ファイル全体を行ごとの正規表現だけで処理せず、字句状態を行間で保持する。regex / JSX / template / f-string / heredoc の文脈を解けない共通 scanner で全言語を代用しない。Node.js 上の tokenizer を再利用してもよい。必要な構文解析を内部に用いても、出力指標は物理行のままとする。
+
+2026-11-06時点で JavaScript / TypeScript / JSX / TSX は pinned Tree-sitter
+WASM grammar を共通 classifier に接続済み。Python / Java / Shell は
+grammar 選定済みだが、言語別の前処理と source mapping を含む接続を後続項目で行う。
 
 重要な実装判断は JS/TS の regex・JSX と Shell の文脈処理である。行数集計を作り込む前に、代表 fixture で tokenizer の適合性と bundle サイズを確認する。言語処理系そのものの起動は採用しない。
 
@@ -196,7 +245,7 @@ lines_with_comments = comment_only_lines + mixed_code_comment_lines
 
 この fallback は release 条件を省略するためのものではない。上表の代表構文が未対応のままなら、その言語の対応完了とは記録しない。C/C++、C#、Go、Rust、SQL、HTML 等は初期版ではコメント解析対象外であり、拡張子 registry を追加しても basic metrics と字句解析対応を別に宣言する。
 
-Markdown・JSON・YAML は初期版で basic metrics に正式対応する。これらの形式と、その instruction / definition を含むソース規模は、ファイル数・bytes・物理行数・非空白行数で表示する。comment / code 分類は初期版の対象外として `comment_analysis: not_requested` を記録し、未対応言語の warning を一律には出さない。プログラミング言語の `available` / `unsupported` / `error` と区別する。
+TXT・HTML・JSON・JSONL・Markdown・YAML は初期版で basic metrics に正式対応する。これらの形式と、その instruction / definition を含む規模は、ファイル数・bytes・物理行数・空白行数・非空白行数で表示する。comment / code 分類は初期版の対象外として `comment_analysis: not_requested` を記録し、未対応言語の warning を一律には出さない。未知の形式の読取可能なテキストも basic 計測の成功として扱い、`comment_analysis: not_requested` とする。対応するプログラミング言語の `available` / `unsupported` / `error` と区別する。
 
 Markdown の見出し・箇条書き・コードブロックも文書の物理行として1回数える。埋込コードを別言語のソースとして重複加算しない。YAML の block scalar 内のプロンプト等も初期版ではファイル単位の role に従う。instruction / definition の非空白行数をコード行数へ改名せず、プログラムの LOC と共通の機能量へ換算しない。
 
@@ -219,14 +268,14 @@ binary 判定は初期 ruleset に固定した signature（PNG / JPEG / GIF / PD
 | `schema_version` | 結果 schema の識別子 |
 | `tool` | `name`、`version`、`ruleset_version` |
 | `status` | `ok` / `partial` / `error` |
-| `input` | `content_source: worktree`、有効な include/exclude、encoding、上限、正規化した設定 |
+| `input` | `content_source: worktree`、inventory 範囲、有効な include/exclude、encoding、上限、正規化した設定 |
 | `summary` | inventory、全カテゴリ集計、coverage、診断件数 |
 | `by_category` | 固定6カテゴリごとの同一集計型 |
 | `by_language` | 言語 ID ごとの同一集計型。未知は `unknown` |
-| `by_extension` | `.md` / `.mjs` / `.json` / `.yml` / `.yaml` / `.js` / `.ts` / `.py` 等の実際の拡張子別集計。拡張子なしは空文字 |
+| `by_extension` | `.txt` / `.html` / `.json` / `.jsonl` / `.md` / `.mjs` / `.yml` / `.yaml` / `.js` / `.ts` / `.py` 等の実際の拡張子別集計。拡張子なしは空文字 |
 | `by_role` | 指示・実装・定義・説明・データ・不明ごとの同一集計型 |
 | `source_composition` | `category: source` のみを role 別に示す、本体ソースの内訳 |
-| `files` | 全収集 entry の結果。path、種類、除外理由、language・role・category と各根拠、metrics、対応状態 |
+| `files` | 全収集 entry の結果。path/name/extension/size_bytes、Git 追跡・ignore 根拠、種類、除外理由、language・role・category と各根拠、metrics、対応状態 |
 | `diagnostics` | stable `code`、`severity`、相対 `path` または null、構造化 `details` |
 
 ファイル結果には `measurement: lexical | basic | binary | excluded | skipped | error` を持たせる。`lexical` は上記の全行数が確定、`basic` は decode と物理行数が確定しているが comment / code は `null`。binary / excluded / skipped / error の全行数は `null`。excluded / skipped の bytes は `null`、decode error の bytes は読取成功分を保持する。
@@ -237,7 +286,14 @@ coverage に `included_regular_files`、`bytes_measured_files`、`text_measured_
 
 inventory は全 tracked entries を `excluded_entries` と `included_entries` に分け、included を regular / symlink / gitlink / unresolved に分ける。これらの合計を検査する。通常ファイル数へ gitlink を1ファイルとして紛れ込ませない。
 
+`--inventory all` で追加した未追跡 entry は `metadata_only_entries`、そのうち
+`would_ignore: true` の entry は `ignored_metadata_only_entries` に数える。
+これらは tracked の included/excluded の合計式とは別の集合である。
+
 各ファイルは各軸でちょうど1グループに所属する。`by_language` / `by_extension` / `by_role` / `by_category` は同じ集合を異なる軸から見たものであり、軸同士の合計を足さない。`source_composition` は本体だけの部分集合とし、test / generated の指示や実装はそこへ混ぜない。拡張子は basename の最後の suffix を大小文字のまま保持し、`.bashrc` のような先頭 dot だけの basename は拡張子なしとする。並びは UTF-8 bytes 順に固定する。
+
+これらの計測集計の集合は tracked の対象 entry に固定し、追加の metadata-only
+entry は inventory の別小計と一覧で示す。未追跡サイズを読取済み bytes へ足さない。
 
 未測定を含む場合、集計値は計測済み部分の小計である。スキルは必ず coverage を併記する。全ファイルを code 0 行と補完しない。たとえば次は説明上の例であり、実 repository の計測値ではない。
 
@@ -254,7 +310,7 @@ CLI の `--detail summary` は `files` を省略する出力投影とし、summa
 
 ## 7. CLI・失敗・出力保存
 
-以下は実装予定の CLI 契約であり、現時点で実行可能なコマンドではない。
+M1 CLI は次のコマンドを実装している。
 
 ```sh
 node miku-repo-scale-<version>.mjs analyze /path/to/repository --detail summary
@@ -275,7 +331,7 @@ node miku-repo-scale-<version>.mjs --version
 
 未知言語や lexer 未対応は warning、CLI 全体を失敗にしない。syntax 不正も code/comment 値を `null` とし warning にする。`ok` は全言語の comment 解析対応を意味しない。スキルは exit code だけでなく coverage と diagnostics を解釈する。
 
-正常に捕捉した失敗も JSON envelope で返す。開始不能な失敗では summary を `null` にする。Node 起動失敗、強制終了等で JSON を返せない場合は呼出側が process failure として扱う。部分結果があっても hard error があれば exit 1 を優先する。
+正常に捕捉した失敗も JSON envelope で返す。現在の error envelope は schema に沿った空の summary と診断を返す。Node 起動失敗、強制終了等で JSON を返せない場合は呼出側が process failure として扱う。部分結果があっても hard error があれば exit 1 を優先する。
 
 既定はファイルを作成・変更しない。`--output` 指定時は計測を終えてから、stdout と同じ bytes を新規ファイルへ保存する。既存 path は排他的作成で拒否し、初期版では上書き option を設けない。repository 内の新規保存先も指定できるが、Git 管理領域と収集済み tracked path には保存しない。保存失敗は成功報告にしない。途中書込の失敗では、その実行が作った不完全ファイルの除去を試み、残った場合は path を stderr に示す。
 
@@ -310,7 +366,7 @@ Main Application は単体 CLI `.mjs`、import 可能な core bundle、source ar
 
 | 工程 | 実装するもの | 完了の根拠 |
 | --- | --- | --- |
-| 1：#319 | Node.js CLI、Git inventory、形式・役割・用途分類、Markdown/JSON/YAML を含む basic metrics、JSON と診断 | 一時 Git repository で通常・特殊 path・欠損・非 Git と、指示・定義のソース規模を区別できる |
+| 1：#319 | Node.js CLI、Git inventory、形式・役割・用途分類、TXT/HTML/JSON/JSONL/Markdown/YAML 等の basic metrics、JSON と診断 | 一時 Git repository で通常・特殊 path・欠損・非 Git と、全体・文書/データ・指示/定義の規模を区別できる |
 | 2a：#321 | tokenizer 選定、言語別構文表、元の物理行への mapping | regex / JSX / f-string / heredoc 等の代表 fixture を Node.js のみで分類できる |
 | 2b：#321 | 各言語 scanner、集計と coverage | 全行分類の等式と集計、未対応時の null、順序と再現性が成立する |
 | 3：#322 | SKILL.md、references、固定 runtime の bundle | isolated bundle から Node.js + Git だけで計測して説明できる |
@@ -321,10 +377,11 @@ Main Application は単体 CLI `.mjs`、import 可能な core bundle、source ar
 - 言語ごとのコメントのみ、混在、文字列中の comment 記号、複数行状態、comment 終了後の code。
 - Java の Unicode escape/text block、JS の regex/division・template・JSX、TSX、Python の docstring/raw/f-string、Shell の `word#text`・`${x#prefix}`・複数 heredoc・引用 heredoc。
 - 未対応言語・文法、壊れた文字列、decode error、binary、size limit。0 と null を取り違えない。
+- TXT / HTML / JSON / JSONL と未知拡張子・拡張子なしのテキスト。JSONL の空行や不正 record、HTML の埋込 script/style を含め、構文解析に依存せず物理行を1回だけ数える。
 - tracked / untracked / ignored / staged new / deleted / unmerged、symlink・外部指向 parent・gitlink。対象外へ読取が広がらない。
 - 改行・タブ・非 ASCII を含む path、macOS / Windows / Linux の path・改行差。異なる実 file bytes は同一入力と扱わない。
 - 全体と各カテゴリ・言語集計の整合、coverage の整合、同一入力の JSON byte 一致、summary 投影の一致。
-- `SKILL.md` / `AGENTS.md` は instruction/source、README は documentation、指定した JSON 定義は definition/source、JSON 評価例は data/test になる。Markdown/JSON/YAML の basic 計測は正常対応として扱う。
+- `SKILL.md` / `AGENTS.md` は instruction/source、README は documentation、指定した JSON 定義は definition/source、JSON/JSONL 評価例は data/test になる。TXT/HTML/JSON/JSONL/Markdown/YAML の basic 計測は正常対応として扱う。
 - role・拡張子集計と source の内訳が整合し、生成物やテスト内の指示、Markdown の埋込コードを二重加算しない。
 - 実行前後の対象ファイル不変、`--output` 既存ファイル拒否、runtime 不在・digest 不一致、配布物に開発環境が不要なこと。
 
@@ -334,8 +391,8 @@ fixture は入力と観測可能な結果を検証する。スキル説明文の
 
 今回の初期案は、Node.js の共通計測 core、Git tracked / worktree の組合せ、Markdown/JSON/YAML を含む物理行指標、指示・実装・定義のソース分類、5言語群の字句分類、coverage を伴う JSON、固定 runtime を呼ぶ薄いスキルである。Issue の未指定箇所について、この文書が初期値・優先順位・失敗時の動作を定める。
 
-後続候補は、対応言語の追加、Windows-31J 等の decode、commit/tree 内容の計測、untracked の明示追加、2時点比較である。初期版の安定した指標と schema を基礎に追加する。
+後続候補は、対応言語の追加、Windows-31J 等の decode、commit/tree 内容の計測、untracked 内容の明示的な計測、2時点比較である。untracked の metadata 一覧は節3.1.1の追加要件として先行して扱う。初期版の安定した指標と schema を基礎に追加する。
 
 ## Repository 初期配置（2026-11-05）
 
-この設計は `igapyon-agent-skills/docs/plans/miku-repo-scale-node-mvp.md` から移した製品仕様の作業正本である。参照した shared rule と姉妹例は [reference-check.md](reference-check.md) に記録する。CLI・core・行数解析・runtime は未実装。
+この設計は `igapyon-agent-skills/docs/plans/miku-repo-scale-node-mvp.md` から移した製品仕様の作業正本である。参照した shared rule と姉妹例は [reference-check.md](reference-check.md) に記録する。2026-11-06に M1 の Git inventory、strict decode、全読取可能テキストの基本行数、分類・集計・CLI・result/config schema を実装した。言語別 comment/code 分類、skill 配布、OS matrix は引き続き実装予定である。

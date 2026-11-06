@@ -1,28 +1,95 @@
 # miku-repo-scale
 
-Measure the size and composition of a Git repository: program code, Agent
-instructions, declarative definitions, tests, documentation, and generated files.
+Measure the size and composition of an entire Git repository: program code,
+Agent instructions, definitions, documents, text data, generated files, and
+binary assets. Repository totals and the source-code subset are both useful.
 
-**Status: initial project scaffold. The CLI and analysis core are not implemented.**
-The first implementation is JavaScript ESM on Node.js, with Git used to enumerate
-tracked files. Target-language interpreters and compilers are not required.
+**Status: M1 implementation is undergoing corrections after self-review.**
+Six known issues and acceptance conditions are tracked in the
+[remediation plan](docs/self-review-remediation-plan.md). The JavaScript ESM
+CLI reads tracked files from the Git worktree and returns deterministic JSON.
+Target-language interpreters and compilers are not required.
 
 ## Planned capabilities
 
 - File counts, bytes, physical lines, blank lines, and nonblank lines.
-- Basic measurement for Markdown, JSON, and YAML from the first milestone.
+- Basic text measurement for TXT, HTML, JSON, JSONL, Markdown, and YAML from
+  the first milestone, plus readable text with other or missing extensions.
 - Code/comment classification for JavaScript, TypeScript, Python, Java, and Shell.
 - Breakdowns by language, extension, role, and category, including Agent
   instructions in Markdown and explicitly identified JSON/YAML definitions.
 - Versioned result JSON with measurement coverage and structured diagnostics.
+- Binary filenames, extensions, sizes, Git tracking, and ignore-rule information.
 
-The proposed CLI is `miku-repo-scale analyze <repository-root>`. This is a
-planned interface; no `bin` or package export is declared until its entrypoint exists.
+Text files contribute bytes, physical lines, blank lines, and nonblank lines.
+Code/comment analysis adds detail for supported programming languages. JSONL
+physical lines are counted without parsing records; HTML is measured as source
+text, including embedded script/style lines once.
+
+Run a basic report from the repository root:
+
+```sh
+node bundle/miku-repo-scale.mjs analyze . --detail summary
+node bundle/miku-repo-scale.mjs analyze . --inventory all
+```
+
+The default inventory measures tracked files. `--inventory all` also lists
+untracked and ignored files as metadata only; it does not read their contents.
+Use `--include` and `--exclude` to select paths, `--config` for ordered
+classification and encoding rules, and `--output` to create a new report file.
+
+M1 reports file counts, bytes, physical lines, blank/nonblank lines, and
+breakdowns by category, role, language, and extension. Readable text is counted
+even when its extension is unknown or absent. Binary files retain filename,
+extension, size, tracked state, and ignore-rule evidence. JSONL is measured as
+source lines; HTML is measured once as its original text. The schemas are in
+[`schemas/`](schemas/).
+
+JavaScript, TypeScript, JSX, and TSX now receive lexical code/comment line
+classification from pinned Tree-sitter WebAssembly grammars. The standalone CLI
+and runtime bundles embed the parser and grammar data. A parse failure keeps
+bytes and physical-line metrics, sets code/comment metrics to `null`, and adds
+a `LEXICAL_ERROR` warning. Python, Java, and Shell still report lexical
+classification as unsupported while their parser integrations are pending.
+Parser choices, supported syntax, and dialect limits are in
+[language support](docs/language-support.md). The ruleset identifier is now
+`1.1.0`; M1 acceptance remains open while the recorded filesystem concern is
+reviewed.
+
+## Build and release
+
+Use Node.js 22 or newer, npm, and `tar` for development:
+
+```sh
+npm ci
+npm test
+npm run check:artifacts
+node bundle/miku-repo-scale.mjs --version
+```
+
+`npm test` builds both standalone bundles and the source archive before running
+the analysis and packaging tests. The runtime bundle exports `analyze(options)`
+and frozen `metadata` with `stage: "m1"` and `analysisAvailable: true`.
+
+Push a tag `v<package-version>` (currently `v0.2.0`). The
+[release workflow](.github/workflows/release-cli-runtime-bundles.yml) checks
+out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
+22, and creates or updates its GitHub Release with:
+
+- `miku-repo-scale-<tag-version>.mjs`
+- `miku-repo-scale-runtime-<tag-version>.mjs`
+- `miku-repo-scale-sources-<tag-version>.tgz`
+
+A positive integer suffix is also accepted, such as `v0.2.0.1`. Asset filenames
+use the full tag version; embedded product metadata retains package version
+`0.2.0`. The workflow runs on `v*` tag pushes only. See
+[development.md](docs/development.md) for local staging and verification.
 
 ## Project documents
 
 - [Product design](docs/design.md)
 - [Implementation plan: RSC-00–15](docs/implementation-plan.md)
+- [Language support and parser selection](docs/language-support.md)
 - [Current tasks](TODO.md)
 - [Development and repository operations](docs/development.md)
 - [Shared miku-soft references](docs/miku-soft-reference.md)
@@ -35,8 +102,11 @@ The product core and result semantics belong to this repository.
 ## Runtime and repository rules
 
 - Planned product minimum: Node.js 22; Git is required for tracked-file input.
-- Current scaffold has no npm dependencies, executable product, build, or test commands.
-- `src/` will own product code; `tests/` will own verification fixtures and tests.
+- No npm runtime dependencies are needed by the distributed `.mjs` files.
+  Parser packages are locked as development dependencies and embedded in the
+  generated CLI/runtime bundles; esbuild is build tooling and Ajv is test
+  tooling.
+- `src/` owns product entrypoints; `tests/` owns packaging, measurement, and lexical-line checks.
 - `workplace/` is local scratch space; only `workplace/.gitkeep` is tracked.
 - Dependencies, build outputs, `.DS_Store`, and local `.codex/skills/` are ignored.
 - Release artifacts will be generated from source and remain outside tracked files.
