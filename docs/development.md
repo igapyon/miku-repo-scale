@@ -2,16 +2,19 @@
 
 ## Current state
 
-2026-11-06: version `0.2.1` implements M1 repository measurement, result/config
-schemas, CLI output, import API, standalone bundles, and source/dist/bundle
-parity. Self-review remediation is in progress; the atomic root-boundary gate
-and M1 acceptance remain open. RSC-02 selected the WASM parser family, RSC-08
+2026-11-08: version `0.2.2` handles CRLF-terminated Git text output on Windows;
+the regression and full local suite pass. The hosted Windows matrix that
+exposed the issue needs a new run with the refreshed companion runtime.
+Version `0.2.1` implements M1 repository measurement, result/config schemas,
+CLI output, import API, standalone bundles, and source/dist/bundle parity.
+Self-review remediation is in progress; the atomic root-boundary gate and M1
+acceptance remain open. RSC-02 selected the WASM parser family, RSC-08
 implemented common comment-range classification, and RSC-09 through RSC-12
-connected JavaScript/TypeScript/JSX/TSX, Python, Java, and Shell. Next is
-RSC-13 artifact parity for the complete language set is now verified locally.
-Companion RSC-14 and RSC-15a-b also pass locally on Node 22/26; next is its
-hosted Node/OS matrix and release-readiness review.
-SR-01 remains a recorded concern. See [language support](language-support.md) and the
+connected JavaScript/TypeScript/JSX/TSX, Python, Java, and Shell. RSC-13
+artifact parity for the complete language set is verified locally. Companion
+RSC-14 and RSC-15a-b also pass locally on Node 22/26; its hosted Node/OS matrix
+and release-readiness review remain open. SR-01 remains a recorded concern.
+See [language support](language-support.md) and the
 [remediation plan](self-review-remediation-plan.md).
 
 The initial checkout was `devel-tiga1105wch`; the current work branch can differ.
@@ -43,8 +46,8 @@ npm test
 npm run smoke:bundle
 npm run smoke:runtime
 npm run check:artifacts
-TAG_NAME=v0.2.1 npm run stage:release
-TAG_NAME=v0.2.1 npm run check:release
+TAG_NAME=v0.2.2 npm run stage:release
+TAG_NAME=v0.2.2 npm run check:release
 ```
 
 `npm test` uses `pretest` to run `build` and `build:bundle`. `build` generates
@@ -79,9 +82,9 @@ The authoritative product core, diagnostics, and result contract live here.
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
 Push a Git tag `v<package-version>` or `v<package-version>.N`,
-where N is a positive integer with no leading zero. For package `0.2.1`,
-`v0.2.1` and `v0.2.1.2` are accepted; `v0.2.2`, `.notes`, and `.0` are rejected.
-The suffix changes asset filenames, while embedded metadata stays `0.2.1`.
+where N is a positive integer with no leading zero. For package `0.2.2`,
+`v0.2.2` and `v0.2.2.2` are accepted; `v0.2.3`, `.notes`, and `.0` are rejected.
+The suffix changes asset filenames, while embedded metadata stays `0.2.2`.
 
 The workflow runs only on `v*` tag pushes. It checks out that exact tag,
 installs locked dependencies, builds and tests on Node.js 26, stages
@@ -331,3 +334,19 @@ SR-01 remains an acceptance gate. The tag-push workflow is updated. Historical
   - Runtime: `ef5f16888a650ab733e234c2a9fa0283eefaad42b566bc6d82bdbe66e46c6f3f`
   - Source archive: `12de58066caddb5d3203df61478b71215ff5cf55d3c2bcc3fb8957e303055507`
 - The GitHub tag-push workflow has not been run; no tag or Release was created.
+
+## Windows Git text output (2026-11-08)
+
+- The companion's hosted Windows matrix showed `analyze` returning an error for
+  valid temporary repositories. Its tests did not include the structured error
+  details, so the precise Git failure remains unconfirmed.
+- Git root discovery and inventory consume Git text output. Their line-ending
+  handling now strips a CRLF terminator on Windows. A focused regression covers
+  Windows CRLF, POSIX LF, and preservation of a path-ending CR on POSIX.
+- Node.js 26.12.1 `npm test` passed all 43 tests and rebuilt the 0.2.2 CLI,
+  runtime, and source archive. The hosted Windows confirmation remains pending
+  until the companion pins this runtime and its matrix runs again.
+- `TAG_NAME=v0.2.2 npm run stage:release` and `TAG_NAME=v0.2.2 npm run
+  check:release` passed. The staged CLI SHA-256 is
+  `60f7ed1c6dff468a3d733212c95da70a4135d99ddc3e018963ab787a28328430`.
+  No Git tag or GitHub Release was created.

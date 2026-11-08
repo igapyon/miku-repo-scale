@@ -10,7 +10,7 @@ import { analyzeWithFilesystemAdapter } from "../src/analyze.mjs";
 import { classifyPath, validateConfig } from "../src/classification.mjs";
 import { assertResultInvariants, stableJson } from "../src/contracts.mjs";
 import { createFilesystemAccessAdapter } from "../src/file-access.mjs";
-import { parseLsFiles } from "../src/git-inventory.mjs";
+import { parseLsFiles, stripGitLineEnding } from "../src/git-inventory.mjs";
 import { countPhysicalLines, mapPhysicalLines } from "../src/physical-lines.mjs";
 
 function temporaryDirectory(t) {
@@ -105,6 +105,13 @@ test("Git index byte parser groups unmerged stages and preserves control charact
   assert.equal(entries.length, 1);
   assert.equal(entries[0].pathBytes.toString("utf8"), "name with\ttab\nline.txt");
   assert.deepEqual(entries[0].stages.map((stage) => stage.stage), [1, 2]);
+});
+
+test("Git text output strips LF and Windows CRLF terminators", () => {
+  assert.equal(stripGitLineEnding("false\n", "darwin"), "false");
+  assert.equal(stripGitLineEnding("false\r\n", "win32"), "false");
+  assert.equal(stripGitLineEnding("directory\r\n", "darwin"), "directory\r");
+  assert.equal(stripGitLineEnding("directory", "win32"), "directory");
 });
 
 test("empty repository, empty text, BOM-only text, and YAML keep zero distinct from null", (t) => {
