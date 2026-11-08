@@ -5,9 +5,9 @@ Agent instructions, definitions, documents, text data, generated files, and
 binary assets. Repository totals and the source-code subset are both useful.
 
 **Status: M1 local acceptance passed on macOS with Node.js 22 and 26 under the
-documented filesystem scope.** Five self-review issues have targeted fixes;
-SR-01 is an explicit best-effort limitation. Hosted OS/Node verification and
-release readiness remain open. See the
+documented filesystem scope.** Version `0.2.4` is released; SR-01 is an explicit
+best-effort limitation. The product OS/Node matrix and companion skill's hosted
+acceptance remain open. See the
 [remediation plan](docs/self-review-remediation-plan.md). The JavaScript ESM
 CLI reads tracked files from the Git worktree and returns deterministic JSON.
 Target-language interpreters and compilers are not required.
@@ -62,9 +62,13 @@ code/comment metrics to `null`, and adds a `LEXICAL_ERROR` warning. Parser
 choices, supported syntax, and dialect limits are in
 [language support](docs/language-support.md). The ruleset identifier is now
 `1.4.0`. M1 local acceptance passed under the documented filesystem scope;
-hosted OS/Node verification and release readiness remain open.
+the product OS/Node matrix and companion skill's hosted acceptance remain open.
 
 ## Build and release
+
+Pushes, pull requests, and manual dispatch run the full test suite on Node.js
+22, 24, and 26 across Ubuntu, macOS, and Windows through
+[ci.yml](.github/workflows/ci.yml).
 
 Use Node.js 22 or newer, npm, and `tar` for development:
 

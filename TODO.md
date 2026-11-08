@@ -2,16 +2,15 @@
 
 ## Current state
 
-2026-11-08: PR #4 merged product version `0.2.2`; version `0.2.3` is committed
-locally and `0.2.4` is prepared locally. To keep the Node.js + Git single-file
+2026-11-08: PR #5 merged product version `0.2.4`; the hosted release workflow
+passed and published three assets. The product 3×3 OS/Node CI workflow is now
+defined locally and awaits a hosted run. To keep the Node.js + Git single-file
 runtime simple, the product uses best-effort filesystem checks and does not
 promise isolation from malicious concurrent path replacement. M1 local
-acceptance passed all 43 tests on
-Node.js 26.12.1 and 22.23.4 on macOS, and the artifact check passed. Hosted
-OS/Node verification and release readiness remain open. Companion RSC-14
-and RSC-15a-b pass local runtime, bundle, metric-acceptance, and ZIP checks on
-macOS / Node 22 and 26; its hosted Node/OS matrix has not run against the
-refreshed runtime. See the
+acceptance passed all 43 tests on Node.js 26.12.1 and 22.23.4 on macOS. Companion
+RSC-14 and RSC-15a-b pass local runtime, bundle, metric-acceptance, and ZIP
+checks on macOS / Node 22 and 26; its hosted matrix has not rerun against runtime
+0.2.2. See the
 [remediation plan](docs/self-review-remediation-plan.md) and
 [language support](docs/language-support.md).
 
@@ -30,12 +29,12 @@ refreshed runtime. See the
 - [x] RSC-10: connect the Python grammar; classify f-string comments, docstrings, string forms, shebangs, and parse failures.
 - [x] RSC-11: Java parser, JLS Unicode escape translation/source mapping, and original physical-line metrics.
 - [x] RSC-12: Shell and dialects; map CRLF source ranges and reject selected Bash-only syntax under `sh`. **M2 language-aware measurement and local acceptance are complete; hosted OS/Node verification remains open.**
-- [x] RSC-13: verify Shell-enabled source/dist/CLI/runtime parity, version, and SHA-256 on Node 22/26. Hosted run on a pushed tag remains pending.
+- [x] RSC-13: verify Shell-enabled source/dist/CLI/runtime parity, version, and SHA-256 on Node 22/26. The v0.2.4 hosted release workflow passed and published the assets.
 - [x] RSC-14 (SKILL): pin and verify the upstream CLI, add a thin adapter, and build an installable bundle.
 - [x] RSC-15a-b (SKILL): isolated CLI smoke and metric acceptance for instructions, JSON/JSONL, TypeScript, binary files, and ignore metadata.
 - [ ] RSC-15c (SKILL): run hosted Node 22/24/26 and Ubuntu/macOS/Windows matrix; verify Ubuntu ZIP build there.
 - [ ] RSC-15d (SKILL): conversation cases and release-readiness review.
-- [ ] RSC-15 (APP): local Node 22/26 reacceptance and artifact check pass; hosted OS/Node matrix and artifact handoff remain.
+- [ ] RSC-15 (APP): local Node 22/26 acceptance and v0.2.4 artifact handoff pass; new 3×3 hosted OS/Node matrix awaits its first run.
 
 Task details and dependencies: [implementation plan](docs/implementation-plan.md).
 RSC-14 and skill-specific RSC-15 are owned by `miku-repo-scale-skills`.
@@ -61,7 +60,7 @@ Details, expected results, and completion gates: [remediation plan](docs/self-re
 - [x] Node.js 26 build, CLI/runtime/source bundles, local staging and isolated smoke.
 - [x] Replace the Release `published` trigger with the requested tag-push trigger (SR-03).
 - [x] Adjacent miku-soft improvements: clean staging, exact three-file upload set, final-byte smoke.
-- [ ] Record hosted workflow execution after the corrected implementation is included in a pushed release tag.
+- [x] Record the successful v0.2.4 hosted release workflow and published asset set.
 - [x] Binary filename/extension/size metadata, Git tracking, and ignore-rule evidence are included in M1.
 
 ## Repository measurement requirements (2026-11-06)

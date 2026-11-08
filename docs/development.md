@@ -4,15 +4,17 @@
 
 Current package version: `0.2.4`.
 
-2026-11-08: version incremented from `0.2.3` to `0.2.4`. `package.json` and
-both package-lock version fields match. `npm run build`, `npm run build:bundle`,
-`npm run check:artifacts`, and `v0.2.4` tag validation passed. The version is
-prepared locally; no tag or Release was created.
+2026-11-08: version `0.2.4` was released. The
+[hosted release workflow](https://github.com/igapyon/miku-repo-scale/actions/runs/42482909075)
+passed and published the CLI, runtime, and source archive. Local CLI/runtime
+SHA-256 values match the published assets. The product OS/Node matrix is
+defined in [ci.yml](../.github/workflows/ci.yml) and awaits its first hosted
+run; the companion matrix also remains pending.
 
 2026-11-08: M1 local acceptance under the documented best-effort filesystem
 scope passed all 43 tests on Node.js 26.12.1 and Node.js 22.23.4 on macOS. The full
-artifact check and `v0.2.3` tag validation also passed. Hosted OS/Node matrix
-and companion skill release-readiness remain pending.
+artifact check and `v0.2.3` tag validation also passed before the `0.2.4`
+release. Companion skill release-readiness remains pending.
 
 2026-11-08: version `0.2.2` handles CRLF-terminated Git text output on Windows;
 the regression and full local suite pass. The hosted Windows matrix that
@@ -94,6 +96,10 @@ See [implementation-plan.md](implementation-plan.md) and [design.md](design.md).
 The authoritative product core, diagnostics, and result contract live here.
 
 ## Artifact and release preparation
+
+The [CI workflow](../.github/workflows/ci.yml) runs the full test suite on
+pushes, pull requests, and manual dispatch across Ubuntu, macOS, and Windows
+with Node.js 22, 24, and 26.
 
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
