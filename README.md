@@ -73,7 +73,7 @@ node bundle/miku-repo-scale.mjs --version
 the analysis and packaging tests. The runtime bundle exports `analyze(options)`
 and frozen `metadata` with `stage: "m1"` and `analysisAvailable: true`.
 
-Push a tag `v<package-version>` (currently `v0.2.1`). The
+Push a tag `v<package-version>` (currently `v0.2.2`). The
 [release workflow](.github/workflows/release-cli-runtime-bundles.yml) checks
 out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 22, and creates or updates its GitHub Release with:
@@ -82,9 +82,9 @@ out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 - `miku-repo-scale-runtime-<tag-version>.mjs`
 - `miku-repo-scale-sources-<tag-version>.tgz`
 
-A positive integer suffix is also accepted, such as `v0.2.1.1`. Asset filenames
+A positive integer suffix is also accepted, such as `v0.2.2.1`. Asset filenames
 use the full tag version; embedded product metadata retains package version
-`0.2.1`. The workflow runs on `v*` tag pushes only. See
+`0.2.2`. The workflow runs on `v*` tag pushes only. See
 [development.md](docs/development.md) for local staging and verification.
 
 ## Project documents
