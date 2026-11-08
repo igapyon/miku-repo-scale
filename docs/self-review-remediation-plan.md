@@ -2,14 +2,14 @@
 title: M1 自己レビュー指摘への対応計画
 status: in-progress
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-08
 ---
 
 # M1 自己レビュー指摘への対応計画
 
 ## 目的と現在地
 
-自己レビューで確認した6件を修正し、M1 の再受入を行う。既存19テストの成功は既存ケースの実績として残し、6件の解消や M1 全体の完了を示す根拠には使わない。実装と重点回帰テストは進行中だが、SR-01 と元の M1 条件に未解決事項があるため完了ではない。
+自己レビューで確認した6件を整理し、M1 のローカル再受入を行う。既存19テストの成功は既存ケースの実績として残し、6件の解消や M1 全体の完了を示す根拠には使わない。2026-11-08 に SR-01 は単体 Node.js runtime を保つ best-effort 方針として受け入れた。文書化した scope の下で macOS / Node.js 22・26 のローカル受入は完了し、hosted OS/Node 検証は別作業として残る。
 
 この対応開始時点の製品版は利用者指定の `0.2.0` とする。後続の版更新は [development.md](development.md) に記録する。M2 の字句解析と companion skill の開発は、この対応後の作業である。
 
@@ -21,13 +21,51 @@ updated: 2026-11-06
 - SR-03 workflow は `push.tags: ["v*"]` に変更済み。actionlint 1.7.12、Node 22 の v0.2.0 staging/final asset check、Node 26 の `npm run check:artifacts` が pass。GitHub hosted 実行は、修正を含む tag を実際に push した後の記録待ち。
 - 元の M1 条件も照合した。物理行 offset mapping helper と known basename / supported shebang 識別を実装し、手計算 offset と混在 repository の言語・role・source 集計を regression 化した。RSC-04 は atomic filesystem 境界、RSC-07 は output parent race audit が残る。
 
+## SR-01 filesystem 境界監査（2026-11-08）
+
+SR-01 で挙げた3つの filesystem 操作を監査した。
+
+- tracked file の読取は `lstat` / `realpath`、path 指定の `open`、descriptor
+  検査、最後の path 検査を行う。`O_NOFOLLOW` が保護するのは最終要素であり、
+  親ディレクトリ検査だけでは、すべての同時 rename を開いた handle に固定できない。
+- `--inventory all` は `readdirSync(directoryPath)` で走査し、その後に子 path
+  を stat する。再帰前に確認済みディレクトリが置換されると、ファイル内容を
+  読まなくても、対象外の名前や metadata が結果に入る可能性がある。
+- `--output` は親 path を `realpath` して検査してから
+  `openSync(target, "wx")` する。排他的作成は既存の出力先を拒否するが、祖先の
+  path 解決を固定しない。その間に親が置換されると、repository 外へ出力し得る。
+
+Node.js 22 の filesystem API は `openSync(path)` と `opendirSync(path)` を
+文書化しているが、公開 API に `openat` や directory-relative open はない。
+Node.js は WASI についても secure sandbox を提供しないと明記しており、filesystem
+境界の代替にはできない。[Node.js 22 filesystem API](https://nodejs.org/download/release/v22.23.0/docs/api/fs.html)
+と[WASI の security notes](https://nodejs.org/download/release/v22.23.0/docs/api/wasi.html)
+を参照。
+
+**方針決定（2026-11-08）：** 複雑な platform helper や platform 別 artifact を
+加えず、Node.js + Git の単体 `.mjs` runtime を維持する。別 process による敵対的な
+同時 path 置換を製品の保証対象外とし、filesystem checks は best-effort とする。
+この判断はリスクの範囲を定めるもので、競合そのものをコードで解消した意味ではない。
+既存の race 注入テストは tracked read の3 checkpoint を対象にしており、
+任意の rename 順序に対する保証ではない。
+
+製品は filesystem sandbox として使わない。安定した symlink / gitlink の skip と、
+既存の変更検出・診断は維持する。想定外の競合を検出できた場合は partial/error とし、
+正常結果に見せない。コード変更は現在の単純な Node.js 実装と既存の bundle 契約を
+保つ範囲に限り、atomic containment のためだけの helper は追加しない。
+
+受入では、静止した repository、安定した symlink、既存の再現可能な3 checkpointを
+確認する。すべての同時 rename schedule に対する containment は受入条件にしない。
+`--inventory all` と `--output` の path-based race は残存リスクとして利用者向け文書に
+明記し、M1 はこの保証を条件にしない。
+
 ## 作業順の更新（2026-11-06）
 
 利用者の判断により、SR-01 は解決済み・受容済みとして閉じず、Node.js path-based API と `--inventory all` / `--output` に残る race を懸念事項としてこの文書に記録したまま、次の独立作業 RSC-02 へ進む。M1 の完了判定は保留し、RSC-02 の調査・方式選定を M1 の security acceptance の代替にしない。native helper や platform 別成果物を採用するかは、具体的な方式と配布影響を評価してから再判断する。
 
 | 指摘 ID | 優先度 | 確認した問題 | 関連する元の作業 |
 | --- | --- | --- | --- |
-| SR-01 | P1 | 親ディレクトリ検査直後の symlink 差し替えでルート外を読み、ok を返す | RSC-03/04 |
+| SR-01 | P1 at discovery; accepted scope 2026-11-08 | 親ディレクトリ検査直後の symlink 差し替えでルート外を読み、ok を返す | RSC-03/04 |
 | SR-02 | P1 | パス先頭 U+FEFF を BOM として除去し、別ファイルの重複計測が起こる | RSC-01/03/06 |
 | SR-03 | P2 | release published のみが起動条件で、タグ push では生成されない | RSC-13 |
 | SR-04 | P2 | shell-bash 等の指定が unknown/other となり source 集計から外れる | RSC-05/06 |
@@ -53,19 +91,27 @@ updated: 2026-11-06
 - 一時 Git repository と実子 process を使う。元 repository の index/worktree を変更しない。
 - テストは結果の合計に加え、元 path と結果 path の対応、一意性、ファイル別 bytes、外部ファイルへの実際の read 呼出しの有無を観測する。
 
-## SR-01：ルート外を読む競合を防ぐ
+## SR-01：filesystem 境界の best-effort 方針
 
-**先に確定する点：** Node.js 22 と現在の単体 `.mjs` 配布条件で、親ディレクトリを含む path 解決と読取ハンドルを安全に結び付ける方式を小さく実証する。最終要素だけの `O_NOFOLLOW` と一度の親 lstat では不足する。
+**方針（2026-11-08）：** Node.js + Git の単体 `.mjs` runtime を保ち、
+敵対的な同時 path 置換に対する atomic containment は製品保証に含めない。
+この選択は複雑な platform helper と platform 別 artifact を避けるための範囲決定であり、
+path race をコードで解消したことを意味しない。
 
-**現状：未完了。** `src/file-access.mjs` に検査境界をまとめ、計画した3時点の symlink 交換で外部 sentinel を読まない回帰を確認した。通常の `lstat` / `open` を path で呼ぶ限り、検査間の任意の toggle/rename schedule を排除できないため、この結果を atomic containment と見なさない。portable な追加保証を得る helper/native dependency または配布契約の変更を判断してから再設計する。`--inventory all` の recursive `readdir` と `--output` の親 path 検査も原子的境界を持たず、未解決範囲に含める。
+- `src/file-access.mjs` の親 path 確認、`O_NOFOLLOW`、descriptor 確認は維持する。
+- 安定した symlink / gitlink は追跡せず、既存の変更検出は `INPUT_CHANGED` または
+  path 診断、partial / exit 2 とする。検出した変更を完全成功として返さない。
+- tracked read の3つの再現可能な注入 checkpoint では、従来どおり外部 sentinel を
+  読まないことを受入条件とする。任意の rename schedule への保証とは扱わない。
+- `--inventory all` の再帰走査と `--output` の作成も path-based であり、敵対的な
+  同時置換で対象外の metadata を取り込む、または意図しない場所へ書く可能性がある。
+  このリスクは README と設計文書に明記する。
+- 製品を filesystem sandbox と説明しない。解析中に別 process が repository path を
+  敵対的に変更しないことを想定し、M1 完了に atomic containment の証明を求めない。
 
-- ルート・親・対象ファイルの同一性、リンクの有無、実際に開く対象のルート内所属を、最初の内容読取より前に確認する。
-- stat と open の間を含む競合に対して、親に固定した path 解決または同等の保証を提供できる OS/API の方式を評価する。単なる再検査で競合窓が狭くなったことを完成条件にしない。
-- 保証できない状態では内容を読まず fail closed にする。対応 OS ごとに保証範囲を記録し、実装方式が確定できなければ SR-01 は未完了のまま設計課題を明示する。依存や配布形式の変更が必要なら、既存の Node.js + Git／単体 `.mjs` 契約との整合を先に判断する。
-- 変更を検出した対象は `INPUT_CHANGED` または該当する path 診断、partial / exit 2 とし、未読 bytes と行数を null にする。安定した symlink / gitlink の skip は維持する。
-- `--inventory all` の再帰走査と `--output` の親 path 検査も同じ種類の競合がないか照合する。同じ欠陥が確認できた箇所は、このアクセス境界の修正に含める。
-
-**受入条件：** 親検査直後、open 直前、open 後かつ read 前の差し替えを注入しても、ルート外の sentinel 内容を読む呼出しが0件。集計を後から破棄するだけでは合格にしない。静止した正常入力は従来の期待値と一致する。
+**受入条件：** 静止した正常入力の既存結果を保ち、安定した symlink / gitlink を
+skip する。3つの既存注入 checkpoint では変更を検出して外部 sentinel を読まない。
+M1 の残りの再受入は、この明示した threat model の下で行う。
 
 ## SR-02：ファイル名の Unicode を保持する
 
@@ -124,7 +170,7 @@ updated: 2026-11-06
 - Node.js 26.12.1 で build と全25件、生成済み成果物で Node.js 22.23.4 の全25件、隔離 release smoke を実行。競合注入と symlink ケースは macOS で実施し、Windows/Linux と hosted runner は未実行。
 - 成果物に新しい regression fixture と必要な schema を含め、開発環境に依存しないことを確認する。既存の版付き配布物の成功を、修正後 bytes の成功に流用しない。
 - 修正により意味が変わるため、`ruleset_version` は `1.0.1` に更新し、runtime metadata と result の識別子を同じ定義から参照する。製品版 `0.2.0`、result/config schema の v1 は維持する。新たに構造変更が必要になった場合は互換性を先に評価する。
-- 5件（SR-02/03/04/05/06）は regression / artifact evidence を記録。SR-01 は path-based API と all/output audit が未解決のため未完了。件数や合計だけでなく、読取境界・元 path 対応・診断 identity を確認する。
-- M1 全体の完了判定では元の RSC-01/03〜07/13 と実装・受入証拠を照合する。atomic filesystem 境界と output path 安全性等の残件を含め、未達を黙って削除して完了にしない。
+- 5件（SR-02/03/04/05/06）は regression / artifact evidence を記録。SR-01 の atomic containment は実装せず、best-effort の残存リスクとして利用者に開示する。件数や合計だけでなく、読取境界・元 path 対応・診断 identity を確認する。
+- M1 全体の完了判定では元の RSC-01/03〜07/13 と実装・受入証拠を照合する。SR-01 は文書化した threat model で評価し、atomic filesystem 境界の証明を完了条件にしない。
 
 実施時は [TODO](../TODO.md)、[元の実装計画](implementation-plan.md)、[開発記録](development.md) を更新する。GitHub 操作、tag push、公開、commit は今回の作業依頼には含まれていないため行わない。

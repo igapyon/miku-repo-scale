@@ -9,7 +9,7 @@ updated: 2026-11-06
 
 ## 1. 対象と到達点
 
-[初期設計](design.md)を実装可能な作業単位へ分解する。M1 完了判定は自己レビューで再開し、atomic filesystem 境界と `--inventory all` / `--output` path race audit が残る。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。companion repository の RSC-14 と RSC-15a-b も Node.js 22/26 でテストし、installable bundle と local ZIP を確認した。次は hosted RSC-15c matrix と RSC-15d conversation/release review。M1 acceptance は SR-01 と製品側の全体受入が終わるまで保留する。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
+[初期設計](design.md)を実装可能な作業単位へ分解する。利用者の判断により Node.js + Git の単体 `.mjs` runtime を維持し、敵対的な同時 path 置換に対する atomic containment は製品保証の対象外とする。この scope の M1 ローカル受入は macOS / Node.js 22・26 で完了した。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。companion repository の RSC-14 と RSC-15a-b も Node.js 22/26 でテストし、installable bundle と local ZIP を確認した。次は hosted RSC-15c matrix と RSC-15d conversation/release review。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
 
 初期版は JavaScript ESM と Node.js に実装を集約する。対象 repository の Git tracked files の現在の内容を読み、形式・役割・用途を分類し、規模と計測範囲を JSON で返す。スキルは固定した同梱 CLI を呼び、結果を説明する。
 
@@ -121,7 +121,7 @@ brace 記法は予定ファイルの列挙であり、その名前のディレ�
 
 **完了条件：** 後続実装が依存する schema と用語が揃い、各受入ケースの観測可能な期待値が存在する。
 
-**現状（2026-11-06）：** schema は Ajv 2020-12 で result/config を実検証する。path identity と diagnostic regression は追加済み。RSC-01 の M1 完了判定は SR-01 と全体再受入を待つ。
+**現状（2026-11-08）：** schema は Ajv 2020-12 で result/config を実検証する。path identity と diagnostic regression は追加済み。文書化した filesystem scope の下で M1 のローカル受入は完了。hosted OS/Node matrix は RSC-15 に残る。
 
 ### RSC-02：字句解析の可否を先に確認
 
@@ -320,7 +320,7 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 ## 6. 次に実装へ渡す単位
 
-**次は companion の RSC-15c hosted matrix と RSC-15d release-readiness を進める。** RSC-14 と RSC-15a-b は実装済みだが、GitHub Actions の結果はまだない。SR-01 は unresolved concern として[対応計画](self-review-remediation-plan.md)に残し、製品 M1 acceptance は保留する。M1 完了前に `--inventory all` / `--output` の安全境界も再検討する。
+**次は companion の RSC-15c hosted matrix と RSC-15d release-readiness を進める。** RSC-14 と RSC-15a-b は実装済みだが、GitHub Actions の結果はまだない。SR-01 は best-effort の残存リスクとして[対応計画](self-review-remediation-plan.md)に記録した。製品 M1 のローカル受入は完了し、RSC-15 の hosted OS/Node matrix と artifact handoff が残る。
 
 この順序により、TXT/HTML/JSON/JSONL/Markdown/YAML とその他のテキストの基本計測、TypeScript の形式識別、指示ソースの分類を初期の成果に含めつつ、後続のコード・コメント解析と配布に同じ契約を使える。
 

@@ -2,18 +2,34 @@
 
 ## Current state
 
+Current package version: `0.2.4`.
+
+2026-11-08: version incremented from `0.2.3` to `0.2.4`. `package.json` and
+both package-lock version fields match. `npm run build`, `npm run build:bundle`,
+`npm run check:artifacts`, and `v0.2.4` tag validation passed. The version is
+prepared locally; no tag or Release was created.
+
+2026-11-08: M1 local acceptance under the documented best-effort filesystem
+scope passed all 43 tests on Node.js 26.12.1 and Node.js 22.23.4 on macOS. The full
+artifact check and `v0.2.3` tag validation also passed. Hosted OS/Node matrix
+and companion skill release-readiness remain pending.
+
 2026-11-08: version `0.2.2` handles CRLF-terminated Git text output on Windows;
 the regression and full local suite pass. The hosted Windows matrix that
 exposed the issue needs a new run with the refreshed companion runtime.
 Version `0.2.1` implements M1 repository measurement, result/config schemas,
 CLI output, import API, standalone bundles, and source/dist/bundle parity.
-Self-review remediation is in progress; the atomic root-boundary gate and M1
-acceptance remain open. RSC-02 selected the WASM parser family, RSC-08
+Self-review remediation is in progress. The product keeps its single-file
+Node.js runtime and treats malicious concurrent path replacement as outside
+its threat model; path checks are best effort. M1 local acceptance passed under
+that scope; hosted OS/Node verification remains open.
+RSC-02 selected the WASM parser family, RSC-08
 implemented common comment-range classification, and RSC-09 through RSC-12
 connected JavaScript/TypeScript/JSX/TSX, Python, Java, and Shell. RSC-13
 artifact parity for the complete language set is verified locally. Companion
 RSC-14 and RSC-15a-b also pass locally on Node 22/26; its hosted Node/OS matrix
-and release-readiness review remain open. SR-01 remains a recorded concern.
+and release-readiness review remain open. SR-01 is recorded as an accepted
+limitation, not an atomic-containment guarantee.
 See [language support](language-support.md) and the
 [remediation plan](self-review-remediation-plan.md).
 
@@ -46,8 +62,8 @@ npm test
 npm run smoke:bundle
 npm run smoke:runtime
 npm run check:artifacts
-TAG_NAME=v0.2.2 npm run stage:release
-TAG_NAME=v0.2.2 npm run check:release
+TAG_NAME=v0.2.4 npm run stage:release
+TAG_NAME=v0.2.4 npm run check:release
 ```
 
 `npm test` uses `pretest` to run `build` and `build:bundle`. `build` generates
@@ -82,9 +98,9 @@ The authoritative product core, diagnostics, and result contract live here.
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
 Push a Git tag `v<package-version>` or `v<package-version>.N`,
-where N is a positive integer with no leading zero. For package `0.2.2`,
-`v0.2.2` and `v0.2.2.2` are accepted; `v0.2.3`, `.notes`, and `.0` are rejected.
-The suffix changes asset filenames, while embedded metadata stays `0.2.2`.
+where N is a positive integer with no leading zero. For package `0.2.4`,
+`v0.2.4` and `v0.2.4.2` are accepted; `v0.2.5`, `.notes`, and `.0` are rejected.
+The suffix changes asset filenames, while embedded metadata stays `0.2.4`.
 
 The workflow runs only on `v*` tag pushes. It checks out that exact tag,
 installs locked dependencies, builds and tests on Node.js 26, stages
@@ -350,3 +366,16 @@ SR-01 remains an acceptance gate. The tag-push workflow is updated. Historical
   check:release` passed. The staged CLI SHA-256 is
   `60f7ed1c6dff468a3d733212c95da70a4135d99ddc3e018963ab787a28328430`.
   No Git tag or GitHub Release was created.
+
+## M1 reacceptance under scoped filesystem policy (2026-11-08)
+
+- Node.js 26.12.1 `npm test` rebuilt the bundles and passed all 43 tests.
+- Node.js 22.23.4 ran the same 43 tests against those generated artifacts; all
+  passed.
+- `npm run check:artifacts` passed. The release tag syntax check accepted
+  `v0.2.3`; no release assets were staged and no tag or Release was created.
+- The existing three tracked-read race checkpoints remain covered. The suite
+  does not prove containment for every concurrent path replacement; that case
+  is outside the documented product guarantee.
+- Verification ran on macOS. The hosted Ubuntu/macOS/Windows matrix and the
+  companion skill's hosted matrix remain pending.
