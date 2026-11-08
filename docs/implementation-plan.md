@@ -9,7 +9,7 @@ updated: 2026-11-06
 
 ## 1. 対象と到達点
 
-[初期設計](design.md)を実装可能な作業単位へ分解する。M1 基本計測と CLI/runtime 配布 parity の実装はあるが、自己レビューと元の M1 条件の照合により完了判定を再開した。現在は[対応計画](self-review-remediation-plan.md)を実施中で、atomic filesystem 境界と `--inventory all` / `--output` path race audit が残る。物理行 offset helper、basename/shebang 分類、RSC-08 共通字句行分類、RSC-09 JavaScript/TypeScript 接続は実装済み。RSC-02 の parser 選定は完了し、RSC-10〜12 の言語別 parser 接続と RSC-14〜15 のスキル配布・最終受入が後続作業である。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
+[初期設計](design.md)を実装可能な作業単位へ分解する。M1 完了判定は自己レビューで再開し、atomic filesystem 境界と `--inventory all` / `--output` path race audit が残る。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。companion repository の RSC-14 と RSC-15a-b も Node.js 22/26 でテストし、installable bundle と local ZIP を確認した。次は hosted RSC-15c matrix と RSC-15d conversation/release review。M1 acceptance は SR-01 と製品側の全体受入が終わるまで保留する。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
 
 初期版は JavaScript ESM と Node.js に実装を集約する。対象 repository の Git tracked files の現在の内容を読み、形式・役割・用途を分類し、規模と計測範囲を JSON で返す。スキルは固定した同梱 CLI を呼び、結果を説明する。
 
@@ -87,9 +87,9 @@ brace 記法は予定ファイルの列挙であり、その名前のディレ�
 | RSC-07 | CLI・終了状態・保存を完成 | APP `src/cli.mjs`、`src/analyze.mjs` | 06 |
 | RSC-08 | 字句解析と元の物理行の共通接続 | APP `src/lexers/index.mjs`、`src/metrics/lexical-lines.mjs` | 02、06 |
 | RSC-09 | JavaScript / TypeScript / JSX / TSX | APP `src/lexers/index.mjs`、`tests/lexical-parsers.test.mjs` | 08 |
-| RSC-10 | Python | APP `src/lexers/python.mjs` | 08 |
-| RSC-11 | Java | APP `src/lexers/java.mjs` | 08 |
-| RSC-12 | Shell と dialect | APP `src/lexers/shell.mjs` | 08 |
+| RSC-10 | Python | APP `src/lexers/index.mjs`、`tests/python.test.mjs` | 08 |
+| RSC-11 | Java | APP `src/lexers/index.mjs`、`src/lexers/java-unicode.mjs` | 08 |
+| RSC-12 | Shell と dialect | APP `src/lexers/index.mjs`、`src/lexers/shell-source.mjs`、`tests/shell.test.mjs` | 08 |
 | RSC-13 | 製品 runtime / core / source を build | APP `scripts/*`、`dist/*`、artifact tests | 07（lexer parity は08〜12後） |
 | RSC-14 | 固定 runtime を使うスキルを作成 | SKILL `skills/igapyon-miku-repo-scale/**`、`scripts/*` | 13 |
 | RSC-15 | isolated bundle と全体受入を確認 | 両製品の tests / CI / docs、実施記録 | 14 |
@@ -127,7 +127,7 @@ brace 記法は予定ファイルの列挙であり、その名前のディレ�
 
 **完了（2026-11-06）：** SR-01 の atomic filesystem 懸念は未解決のまま計画文書に記録し、独立作業 RSC-02 を先行した。M1 の完了・security acceptance を意味しない。
 
-採用方式、対応 dialect、正確な依存版・license・source、source mapping、代表 fixture、単体 `.mjs` bundle のサイズと実行結果は [language-support.md](language-support.md) に記録した。Java Unicode escape の RSC-11 用 source map と完全な JLS eligibility algorithm は後続実装に残る。Zsh は明示的に未対応とし、Bash grammar で解析した結果を Zsh の成功として扱わない。
+採用方式、対応 dialect、正確な依存版・license・source、source mapping、代表 fixture、単体 `.mjs` bundle のサイズと実行結果は [language-support.md](language-support.md) に記録した。Java Unicode escape source map と完全な JLS eligibility algorithm は RSC-11 で実装済み。Zsh は明示的に未対応とし、Bash grammar で解析した結果を Zsh の成功として扱わない。
 
 **完了条件：** RSC-09〜12で使う方式が言語ごとに決まり、難しい代表構文を実際に解釈できる証拠がある。検討した方式が不適合なら方式を変更する。対応言語を黙って減らして完了にしない。
 
@@ -226,6 +226,8 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 ### RSC-10：Python
 
+**完了（2026-11-06）：** pinned Python grammar を共通 lexer と `analyze()` に接続した。PEP 701 f-string expression comments、同じ quote の f-string expression、triple/docstring・raw・bytes string、shebang、`# type: ignore`、CRLF、壊れた構文を `tests/python.test.mjs` で確認する。shebang は code、docstring と文字列本文も code、構文上の comment は commentとして分類する。構文エラーは basic metrics と `LEXICAL_ERROR` warning に fallback する。ruleset version は `1.2.0`。
+
 1. quote / triple quote、raw / bytes / f-string と式補間、`#` comment を扱う。
 2. docstring と複数行 literal は code、shebang は code、comment 構文上の directive は comment とする。
 3. Python 本体を実行せず、固定した文法版の能力と未対応時の返却を確認する。
@@ -235,6 +237,8 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 **完了条件：** 文字列・指示・comment の取り違えがなく、物理行への mapping と集計が一致する。
 
 ### RSC-11：Java
+
+**完了（2026-11-06）：** pinned Java grammar を共通 lexer と `analyze()` に接続。JLS §3.3 の eligible backslash 判定、1個以上の `u`、4桁 hex、変換文字を再走査しない規則を実装し、変換後 UTF-16 range を元 source へ戻す。text block・string・char、Unicode escape が生成する block / line comment と改行、CRLF raw line、malformed escape、syntax error を `tests/java.test.mjs` で確認。変換後改行を元の物理行数へ加えない。構文・変換エラーは basic metrics と `LEXICAL_ERROR` warning へ fallback する。ruleset version は `1.3.0`。
 
 1. string / char / text block、行・block comment を扱う。
 2. Unicode escape の変換結果から comment を認識し、元の物理行へ mapping する。変換で生じる行終端も前処理として扱う。
@@ -250,7 +254,7 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 2. token 境界の `#` と `word#text`、quote、escape、`${x#prefix}`、command substitution、heredoc を区別する。
 3. quoted delimiter、`<<-`、複数 heredoc、入れ子の式を、RSC-02 で固定した各 dialect の対応範囲で扱う。heredoc の本文は code とする。
 
-**検証：** `tests/shell.test.mjs`。引用あり・なし heredoc、タブ除去、途中の `#`、substitution、shebang矛盾、対応外dialect を含める。shell 自体は実行しない。
+**完了（2026-11-06）：** pinned Bash grammar を `sh` / Bash dialect と共通 lexer に接続した。token境界の `#`、word中の `#`、quote、`${x#prefix}`、command substitution、quoted / unquoted heredoc、`<<-`、複数 heredoc、CRLF source mapping、shebang、dialect conflict、Zsh unsupported、壊れた構文を `tests/shell.test.mjs` で確認する。`sh` は Bash grammar が受け付ける共通構文を計測し、`[[ ]]`、array、arithmetic command、C-style `for`、process substitution、here-string、coproc、ANSI-C quote、`function` keyword などASTで識別できる明白な Bash-only 構文では unsupported にする。Shell source は実行しない。CLI/runtime artifact smoke に Bash と POSIX `sh` の入力を追加し、ruleset version は `1.4.0` に更新した。Product version は `0.2.1` のまま。
 
 **完了条件：** M2。RSC-09〜12の各 fixture、全体 aggregate、unknown / unsupported / lexical error の coverage が整合する。
 
@@ -279,6 +283,8 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 **完了条件：** installable skill に必要なファイルが揃い、CLI と skill-local adapter の責務境界が維持される。
 
+**実績（2026-11-07）：** RSC-14a-d は companion の runtime manifest/resolver、CLI adapter、instructions/references、license-aware bundle tests で完了。実 CLI を含む bundle を生成した。
+
 ### RSC-15：隔離実行と最終受入
 
 1. bundle を一時ディレクトリへ展開し、元の APP / SKILL source に依存せず `--version`、help、代表 analyze を実行する。
@@ -290,9 +296,11 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 **完了条件：** M3。独立した配布物から Node.js + Git だけで計測でき、JSON / TypeScript を含む初期対象と指示ソースの規模を正しく説明できる。未確認事項は具体的に残す。
 
+**実績（2026-11-07）：** RSC-15a-b の isolated runtime smoke と metric acceptance は Node.js 22/26 で通過。RSC-15c hosted OS/Node matrix と RSC-15d conversation/release review は未完了。
+
 ## 5. 検証コマンドと記録の扱い
 
-実装時の標準コマンドは次の入口を用意する。現時点では未作成であり、この計画作業で成功した検証とは扱わない。
+計画時の標準コマンドは次の通り。現在の実行結果は [development.md](development.md) と companion の開発記録に記す。
 
 | 実行場所 | 予定コマンド | 用途 |
 | --- | --- | --- |
@@ -312,7 +320,7 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 ## 6. 次に実装へ渡す単位
 
-**次は RSC-10 を実施する。** 利用者の判断により SR-01 を unresolved concern として[対応計画](self-review-remediation-plan.md)に残し、M1 の受入を保留したまま Python parser を接続する。RSC-10〜12 の残る言語計測や M1 完了を宣言する前に、SR-01 と `--inventory all` / `--output` の安全境界を再検討する。
+**次は companion の RSC-15c hosted matrix と RSC-15d release-readiness を進める。** RSC-14 と RSC-15a-b は実装済みだが、GitHub Actions の結果はまだない。SR-01 は unresolved concern として[対応計画](self-review-remediation-plan.md)に残し、製品 M1 acceptance は保留する。M1 完了前に `--inventory all` / `--output` の安全境界も再検討する。
 
 この順序により、TXT/HTML/JSON/JSONL/Markdown/YAML とその他のテキストの基本計測、TypeScript の形式識別、指示ソースの分類を初期の成果に含めつつ、後続のコード・コメント解析と配布に同じ契約を使える。
 
@@ -322,6 +330,6 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 - SKILL: `/Users/igapyon/Documents/git/miku-repo-scale-skills`、branch `devel-tiga1105wcg`。
 - README、package metadata、repository 規約、設計・作業計画・参照記録を配置した。
 - RSC-00〜01、03〜07 の M1 と RSC-13 の基本 artifact parity を実装した。現行コマンド・検証は [development.md](development.md) に記録。
-- 自己レビュー後、SR-01 は未解決事項として維持したまま RSC-02 の方式選定と RSC-08 共通 classifier を実装した。その後 RSC-09 で JavaScript/TypeScript grammar を接続した。
+- 自己レビュー後、SR-01 は未解決事項として維持したまま RSC-02 の方式選定と RSC-08 共通 classifier を実装した。その後 RSC-09 で JavaScript/TypeScript、RSC-10 で Python、RSC-11 で Java grammar を接続した。
 - RSC-14〜15 の skill 固有作業は companion の [計画](https://github.com/igapyon/miku-repo-scale-skills/blob/devel/docs/implementation-plan.md)が担当する。ローカル作業中は sibling の同名ファイルを読む。
 - product build/test/CI と配布 artifact の成功は、初期ファイル配置の成功と分けて記録する。

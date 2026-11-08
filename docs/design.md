@@ -1,6 +1,6 @@
 # miku-repo-scale：Node.js によるリポジトリ規模・構成計測の初期設計
 
-2026-11-05設計、2026-11-06更新。状態：M1 実装は自己レビュー修正と全体再受入の途中。[6件の対応計画](self-review-remediation-plan.md)を進めており、物理行 offset helper と basename/shebang 分類は実装済み。atomic filesystem 境界、`--inventory all` / `--output` の path race audit は未完了。JavaScript / TypeScript / JSX / TSX の字句解析を接続し、Python / Java / Shell と installable skill は後続作業。
+2026-11-05設計、2026-11-06更新。状態：RSC-08〜12 の JavaScript / TypeScript / JSX / TSX / Python / Java / Shell 字句解析を接続済み。M1 は自己レビュー修正と全体再受入の途中。[対応計画](self-review-remediation-plan.md)に残る atomic filesystem 境界と `--inventory all` / `--output` の path race audit が未完了。installable skill と最終受入は後続作業。
 
 実装作業は [Node.js 初期版の実装計画](implementation-plan.md) の RSC-00〜15 に分解した。
 
@@ -235,9 +235,10 @@ lines_with_comments = comment_only_lines + mixed_code_comment_lines
 
 ファイル全体を行ごとの正規表現だけで処理せず、字句状態を行間で保持する。regex / JSX / template / f-string / heredoc の文脈を解けない共通 scanner で全言語を代用しない。Node.js 上の tokenizer を再利用してもよい。必要な構文解析を内部に用いても、出力指標は物理行のままとする。
 
-2026-11-06時点で JavaScript / TypeScript / JSX / TSX は pinned Tree-sitter
-WASM grammar を共通 classifier に接続済み。Python / Java / Shell は
-grammar 選定済みだが、言語別の前処理と source mapping を含む接続を後続項目で行う。
+2026-11-06時点で JavaScript / TypeScript / JSX / TSX / Python / Java / Shell は
+pinned Tree-sitter WASM grammar を共通 classifier に接続済み。Java は JLS §3.3
+Unicode escape を前処理し、Shell は CRLF を正規化してコメント範囲を元 source
+へ戻す。`sh` の明白な Bash-only 構文と Zsh は unsupported とする。
 
 重要な実装判断は JS/TS の regex・JSX と Shell の文脈処理である。行数集計を作り込む前に、代表 fixture で tokenizer の適合性と bundle サイズを確認する。言語処理系そのものの起動は採用しない。
 

@@ -2,10 +2,12 @@
 
 ## Current state
 
-2026-11-06: five self-review findings now have fixes and local regression or
-workflow checks. SR-01 is recorded as an unresolved concern; RSC-02 selection,
-RSC-08 common line classification, and RSC-09 JavaScript/TypeScript integration
-are complete. M1 acceptance remains open. Next is RSC-10. See the
+2026-11-07: companion RSC-14 and RSC-15a-b now pass local runtime, bundle,
+metric-acceptance, and ZIP checks on macOS / Node 22 and 26. Its hosted
+Node/OS matrix is prepared but not run. Product RSC-15 and M1 acceptance remain
+open because SR-01 and the `--inventory all` / `--output` path audit remain.
+RSC-02, RSC-08 through RSC-13 product implementation work is complete locally.
+See the
 [remediation plan](docs/self-review-remediation-plan.md) and [language support](docs/language-support.md).
 
 - [x] Confirm repository, work branch, shared rules, and same-layer sister examples.
@@ -20,10 +22,14 @@ are complete. M1 acceptance remains open. Next is RSC-10. See the
 - [x] RSC-07: CLI, exit status, and new-file output implemented; M1 acceptance remains pending below.
 - [x] RSC-08: classify UTF-16 comment ranges onto original physical lines; validate formulas and aggregate the lexical subset.
 - [x] RSC-09: connect JavaScript, TypeScript, JSX, and TSX parsers; embed their grammars in standalone bundles and diagnose parse failures.
-- [ ] RSC-10: Python.
-- [ ] RSC-11: Java.
-- [ ] RSC-12: Shell and dialects. **M2: language-aware measurement.**
-- [ ] RSC-13: tag-push trigger and Node 22/26 local artifact checks pass; hosted run on a pushed tag remains pending.
+- [x] RSC-10: connect the Python grammar; classify f-string comments, docstrings, string forms, shebangs, and parse failures.
+- [x] RSC-11: Java parser, JLS Unicode escape translation/source mapping, and original physical-line metrics.
+- [x] RSC-12: Shell and dialects; map CRLF source ranges and reject selected Bash-only syntax under `sh`. **M2 language-aware measurement is complete; product acceptance remains open.**
+- [x] RSC-13: verify Shell-enabled source/dist/CLI/runtime parity, version, and SHA-256 on Node 22/26. Hosted run on a pushed tag remains pending.
+- [x] RSC-14 (SKILL): pin and verify the upstream CLI, add a thin adapter, and build an installable bundle.
+- [x] RSC-15a-b (SKILL): isolated CLI smoke and metric acceptance for instructions, JSON/JSONL, TypeScript, binary files, and ignore metadata.
+- [ ] RSC-15c (SKILL): run hosted Node 22/24/26 and Ubuntu/macOS/Windows matrix; verify Ubuntu ZIP build there.
+- [ ] RSC-15d (SKILL): conversation cases and release-readiness review.
 - [ ] RSC-15 (APP): product acceptance, OS/Node matrix, handoff of verified artifacts.
 
 Task details and dependencies: [implementation plan](docs/implementation-plan.md).

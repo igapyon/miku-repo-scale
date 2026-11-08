@@ -304,7 +304,10 @@ function processEntry(entry, root, rules, normalized, includeMatchers, excludeMa
   const lines = countPhysicalLines(decoded.text);
   Object.assign(file.metrics, lines);
   file.measurement = "basic";
-  if (PROGRAM_LANGUAGES.has(resolvedClassification.language)) {
+  const shellShebangConflict = resolvedClassification.language === "shell"
+    && ["SHEBANG_LANGUAGE_MISMATCH", "SHEBANG_DIALECT_MISMATCH"].includes(resolvedClassification.shebang_issue);
+  if (shellShebangConflict) file.comment_analysis = "unsupported";
+  if (PROGRAM_LANGUAGES.has(resolvedClassification.language) && !shellShebangConflict) {
     const lexical = lexSource({
       language: resolvedClassification.language,
       extension: file.extension ?? "",
