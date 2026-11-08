@@ -1,6 +1,6 @@
 # miku-repo-scale：Node.js によるリポジトリ規模・構成計測の初期設計
 
-2026-11-05設計、2026-11-06更新。状態：RSC-08〜12 の JavaScript / TypeScript / JSX / TSX / Python / Java / Shell 字句解析を接続済み。M1 は自己レビュー修正と全体再受入の途中。[対応計画](self-review-remediation-plan.md)に残る atomic filesystem 境界と `--inventory all` / `--output` の path race audit が未完了。installable skill と最終受入は後続作業。
+2026-11-05設計、2026-11-08更新。状態：RSC-08〜12 の JavaScript / TypeScript / JSX / TSX / Python / Java / Shell 字句解析を接続済み。SR-01 は単体 Node.js runtime を維持し、敵対的な同時 path 置換を保証対象外とする方針を記録した。文書化した scope の下で M1 のローカル受入は完了し、hosted OS/Node 検証と installable skill の最終受入が残る。[対応計画](self-review-remediation-plan.md)を参照。
 
 実装作業は [Node.js 初期版の実装計画](implementation-plan.md) の RSC-00〜15 に分解した。
 
@@ -83,7 +83,7 @@ Git の収集 adapter は `git -C <root> ls-files --cached --stage -z` の出力
 
 Git index の symlink mode に加えて実ファイルの種類も調べる。通常ファイルから symlink への置換、親ディレクトリのリンク化、対象ルート外への解決を見つけた場合はその path を読まない。Git subprocess は引数配列で起動し、対象内の設定ファイルを JavaScript として実行しない。
 
-現実装の `src/file-access.mjs` は親 path を複数回照合し、open 後・read 前にも再検査する。指定した3時点に親 symlink を差し替える regression では外部 sentinel を読まない。ただし Node.js の標準 fs API による path-based `lstat` と `open` の列は原子的な directory-relative open ではないため、この検査を任意の同時 rename に対する containment 保証とは扱わない。`--inventory all` の再帰走査と `--output` の保存先も個別 audit が必要であり、M1 の security acceptance は保留する。
+現実装の `src/file-access.mjs` は親 path を複数回照合し、open 後・read 前にも再検査する。指定した3時点に親 symlink を差し替える regression では外部 sentinel を読まない。ただし path 操作は原子的に directory handle へ固定されない。製品は、解析中に別 process が敵対的に path を置換しないことを前提とし、完全な filesystem sandbox とはしない。通常の symlink / gitlink は引き続き追跡せず、検知した変更は partial/error にする。想定外の同時置換があれば tracked read は外部を読んだり、`--inventory all` が外部の名前・metadata を取り込んだり、`--output` の保存先が置き換わったりする可能性がある。この範囲は atomic containment の受入条件にしない。
 
 path はルート相対、区切りは `/`、大小文字と Unicode 表現は保存する。不正 UTF-8 path は置換して別 path にせず `PATH_ENCODING_UNSUPPORTED` とし、元 bytes の base64 を診断に残す。
 

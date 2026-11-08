@@ -4,11 +4,17 @@ Measure the size and composition of an entire Git repository: program code,
 Agent instructions, definitions, documents, text data, generated files, and
 binary assets. Repository totals and the source-code subset are both useful.
 
-**Status: M1 implementation is undergoing corrections after self-review.**
-Six known issues and acceptance conditions are tracked in the
+**Status: M1 local acceptance passed on macOS with Node.js 22 and 26 under the
+documented filesystem scope.** Five self-review issues have targeted fixes;
+SR-01 is an explicit best-effort limitation. Hosted OS/Node verification and
+release readiness remain open. See the
 [remediation plan](docs/self-review-remediation-plan.md). The JavaScript ESM
 CLI reads tracked files from the Git worktree and returns deterministic JSON.
 Target-language interpreters and compilers are not required.
+
+The CLI uses best-effort path checks. It is not a security sandbox for a
+repository whose paths are being maliciously changed by another process while
+analysis is running.
 
 ## Planned capabilities
 
@@ -55,8 +61,8 @@ grammar data. A parse failure keeps bytes and physical-line metrics, sets
 code/comment metrics to `null`, and adds a `LEXICAL_ERROR` warning. Parser
 choices, supported syntax, and dialect limits are in
 [language support](docs/language-support.md). The ruleset identifier is now
-`1.4.0`; M1 acceptance remains open while the recorded filesystem concern is
-reviewed.
+`1.4.0`. M1 local acceptance passed under the documented filesystem scope;
+hosted OS/Node verification and release readiness remain open.
 
 ## Build and release
 
@@ -73,7 +79,7 @@ node bundle/miku-repo-scale.mjs --version
 the analysis and packaging tests. The runtime bundle exports `analyze(options)`
 and frozen `metadata` with `stage: "m1"` and `analysisAvailable: true`.
 
-Push a tag `v<package-version>` (currently `v0.2.2`). The
+Push a tag `v<package-version>` (currently `v0.2.4`). The
 [release workflow](.github/workflows/release-cli-runtime-bundles.yml) checks
 out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 22, and creates or updates its GitHub Release with:
@@ -82,9 +88,9 @@ out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 - `miku-repo-scale-runtime-<tag-version>.mjs`
 - `miku-repo-scale-sources-<tag-version>.tgz`
 
-A positive integer suffix is also accepted, such as `v0.2.2.1`. Asset filenames
+A positive integer suffix is also accepted, such as `v0.2.4.1`. Asset filenames
 use the full tag version; embedded product metadata retains package version
-`0.2.2`. The workflow runs on `v*` tag pushes only. See
+`0.2.4`. The workflow runs on `v*` tag pushes only. See
 [development.md](docs/development.md) for local staging and verification.
 
 ## Project documents
