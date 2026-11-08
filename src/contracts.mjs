@@ -1,6 +1,6 @@
 import { CATEGORIES, ROLES } from "./classification.mjs";
 
-export const RULESET_VERSION = "1.1.0";
+export const RULESET_VERSION = "1.4.0";
 export const SCHEMA_VERSION = "miku-repo-scale.result/v1";
 
 export function emptyAggregate() {

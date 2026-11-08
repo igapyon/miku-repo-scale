@@ -45,15 +45,17 @@ extension, size, tracked state, and ignore-rule evidence. JSONL is measured as
 source lines; HTML is measured once as its original text. The schemas are in
 [`schemas/`](schemas/).
 
-JavaScript, TypeScript, JSX, and TSX now receive lexical code/comment line
-classification from pinned Tree-sitter WebAssembly grammars. The standalone CLI
-and runtime bundles embed the parser and grammar data. A parse failure keeps
-bytes and physical-line metrics, sets code/comment metrics to `null`, and adds
-a `LEXICAL_ERROR` warning. Python, Java, and Shell still report lexical
-classification as unsupported while their parser integrations are pending.
-Parser choices, supported syntax, and dialect limits are in
+JavaScript, TypeScript, JSX, TSX, Python, Java, Bash, and common POSIX `sh`
+syntax receive lexical code/comment line classification from pinned
+Tree-sitter WebAssembly grammars. Java Unicode escapes follow JLS §3.3; Shell
+CRLF comment ranges map back to the original source before physical-line
+classification. Zsh and selected Bash-only constructs in `sh` files remain
+unsupported. The standalone CLI and runtime bundles embed the parser and
+grammar data. A parse failure keeps bytes and physical-line metrics, sets
+code/comment metrics to `null`, and adds a `LEXICAL_ERROR` warning. Parser
+choices, supported syntax, and dialect limits are in
 [language support](docs/language-support.md). The ruleset identifier is now
-`1.1.0`; M1 acceptance remains open while the recorded filesystem concern is
+`1.4.0`; M1 acceptance remains open while the recorded filesystem concern is
 reviewed.
 
 ## Build and release
@@ -71,7 +73,7 @@ node bundle/miku-repo-scale.mjs --version
 the analysis and packaging tests. The runtime bundle exports `analyze(options)`
 and frozen `metadata` with `stage: "m1"` and `analysisAvailable: true`.
 
-Push a tag `v<package-version>` (currently `v0.2.0`). The
+Push a tag `v<package-version>` (currently `v0.2.1`). The
 [release workflow](.github/workflows/release-cli-runtime-bundles.yml) checks
 out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 22, and creates or updates its GitHub Release with:
@@ -80,9 +82,9 @@ out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 - `miku-repo-scale-runtime-<tag-version>.mjs`
 - `miku-repo-scale-sources-<tag-version>.tgz`
 
-A positive integer suffix is also accepted, such as `v0.2.0.1`. Asset filenames
+A positive integer suffix is also accepted, such as `v0.2.1.1`. Asset filenames
 use the full tag version; embedded product metadata retains package version
-`0.2.0`. The workflow runs on `v*` tag pushes only. See
+`0.2.1`. The workflow runs on `v*` tag pushes only. See
 [development.md](docs/development.md) for local staging and verification.
 
 ## Project documents

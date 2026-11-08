@@ -80,6 +80,10 @@ function makeSmokeRepository(directory) {
   mkdirSync(repository);
   writeFileSync(join(repository, "notes.txt"), "first\r\n\r\nlast");
   writeFileSync(join(repository, "records.jsonl"), '{"a":1}\n\nnot-json\n');
+  writeFileSync(join(repository, "script.py"), "# Python comment\nprint('ok')\n");
+  writeFileSync(join(repository, "JavaSmoke.java"), "class JavaSmoke {\n  \\u002f\\u002f comment\n}\n");
+  writeFileSync(join(repository, "ShellSmoke.bash"), "#!/usr/bin/env bash\necho token#suffix # trailing comment\ncat <<'END'\n# heredoc data\nEND\n# shell comment\n");
+  writeFileSync(join(repository, "ShellPortable.sh"), "#!/bin/sh\nprintf '%s\\n' \"$HOME\" # portable comment\n# POSIX shell comment\n");
   writeFileSync(join(repository, "cover.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]));
   execFileSync("git", ["-C", repository, "init", "-q"]);
   execFileSync("git", ["-C", repository, "add", "--all"]);
@@ -98,9 +102,14 @@ export function checkCli(path, pkg = readPackage()) {
     const result = JSON.parse(analysis.stdout);
     assert.equal(result.schema_version, "miku-repo-scale.result/v1");
     assert.equal(result.tool.version, pkg.version);
+    assert.equal(result.tool.ruleset_version, "1.4.0");
     assert.equal(result.status, "ok");
-    assert.equal(result.summary.totals.total_physical_lines, 6);
+    assert.equal(result.summary.totals.total_physical_lines, 20);
     assert.equal(result.summary.coverage.binary_files, 1);
+    assert.equal(result.summary.coverage.lexically_classified_files, 4);
+    assert.equal(result.by_language.python.classified_lines.files, 1);
+    assert.equal(result.by_language.java.classified_lines.files, 1);
+    assert.equal(result.by_language.shell.classified_lines.files, 2);
     assert.equal(result.files, undefined, "summary detail omits file records");
   });
 }
@@ -113,9 +122,9 @@ export function checkRuntime(path, pkg = readPackage()) {
       { cwd, encoding: "utf8", timeout: 10000 });
     assert.deepEqual(JSON.parse(output), {
       exports: ["analyze", "metadata"],
-      metadata: { name: pkg.name, version: pkg.version, stage: "m1", analysisAvailable: true, rulesetVersion: "1.1.0" },
+      metadata: { name: pkg.name, version: pkg.version, stage: "m1", analysisAvailable: true, rulesetVersion: "1.4.0" },
       status: "ok",
-      lines: 6,
+      lines: 20,
     });
   });
 }

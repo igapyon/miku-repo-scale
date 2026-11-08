@@ -51,13 +51,13 @@ test("JavaScript and TypeScript grammar modes expose original UTF-16 comment ran
   }
 });
 
-test("analysis applies JavaScript and TypeScript comment metrics, with clean fallback states", (t) => {
+test("analysis applies JavaScript, TypeScript, and Java comment metrics, with clean fallback states", (t) => {
   const root = repository(t);
   write(root, "src/main.mjs", "#!/usr/bin/env node\n// comment only\nconst value = /https?:\\/\\//; /* inline */\n");
   write(root, "src/view.tsx", fixture("javascript-tsx.tsx"));
   write(root, "src/types.d.ts", "declare const value: string; // declaration\n");
   write(root, "src/broken.js", "const broken = ;\n");
-  write(root, "src/utility.py", "print('python')\n");
+  write(root, "src/utility.java", "class Utility {}\n");
   write(root, "data.json", "{\"value\": true}\n");
   track(root);
 
@@ -77,19 +77,19 @@ test("analysis applies JavaScript and TypeScript comment metrics, with clean fal
   }, { total: 3, blank: 0, comment: 1, code: 2, mixed: 1, withComments: 2 });
   assert.equal(files.get("src/view.tsx").measurement, "lexical");
   assert.equal(files.get("src/types.d.ts").measurement, "lexical");
-  assert.equal(result.summary.coverage.lexically_classified_files, 3);
-  assert.equal(result.summary.totals.classified_lines.files, 3);
+  assert.equal(result.summary.coverage.lexically_classified_files, 4);
+  assert.equal(result.summary.totals.classified_lines.files, 4);
   assert.equal(result.by_language.typescript.classified_lines.files, 2);
+  assert.equal(result.by_language.java.classified_lines.files, 1);
 
   assert.equal(files.get("src/broken.js").measurement, "basic");
   assert.equal(files.get("src/broken.js").comment_analysis, "error");
   assert.equal(files.get("src/broken.js").metrics.total_physical_lines, 1);
   assert.equal(files.get("src/broken.js").metrics.code_lines, null);
-  assert.equal(files.get("src/utility.py").measurement, "basic");
-  assert.equal(files.get("src/utility.py").comment_analysis, "unsupported");
+  assert.equal(files.get("src/utility.java").measurement, "lexical");
+  assert.equal(files.get("src/utility.java").comment_analysis, "available");
   assert.equal(files.get("data.json").comment_analysis, "not_requested");
   assert.deepEqual(result.diagnostics.map(({ code, path, severity }) => [code, severity, path]), [
     ["LEXICAL_ERROR", "warning", "src/broken.js"],
-    ["COMMENT_ANALYSIS_UNSUPPORTED", "warning", "src/utility.py"],
   ]);
 });

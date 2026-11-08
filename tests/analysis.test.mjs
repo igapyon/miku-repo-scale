@@ -198,6 +198,13 @@ test("explicit Shell dialects normalize into the shell source aggregate", (t) =>
   const files = new Map(result.files.map((file) => [file.path, file]));
   for (const name of ["sh-script", "bash-script", "zsh-script", "plain-script", "special.sh", "dist/generated.sh"]) {
     assert.equal(files.get(name).language, "shell", name);
+  }
+  for (const name of ["sh-script", "bash-script", "plain-script", "dist/generated.sh"]) {
+    assert.equal(files.get(name).measurement, "lexical", name);
+    assert.equal(files.get(name).comment_analysis, "available", name);
+  }
+  for (const name of ["zsh-script", "special.sh"]) {
+    assert.equal(files.get(name).measurement, "basic", name);
     assert.equal(files.get(name).comment_analysis, "unsupported", name);
     assert.equal(files.get(name).metrics.code_lines, null, name);
   }
@@ -214,7 +221,9 @@ test("explicit Shell dialects normalize into the shell source aggregate", (t) =>
   assert.equal(files.get("dist/generated.sh").category, "generated");
   assert.equal(result.source_composition.implementation.files, 4);
   assert.equal(result.by_language.shell.files, 6);
-  assert.equal(result.diagnostics.filter((item) => item.code === "COMMENT_ANALYSIS_UNSUPPORTED").length, 6);
+  assert.equal(result.summary.coverage.lexically_classified_files, 4);
+  assert.equal(result.by_language.shell.classified_lines.files, 4);
+  assert.equal(result.diagnostics.filter((item) => item.code === "COMMENT_ANALYSIS_UNSUPPORTED").length, 2);
 });
 
 test("known basenames and shebangs refine language and report unsupported or conflicting forms", (t) => {
@@ -250,6 +259,10 @@ test("known basenames and shebangs refine language and report unsupported or con
   assert.equal(files.get("complex-script").measurement, "basic");
   assert.equal(files.get("complex-script").comment_analysis, "not_requested");
   assert.equal(files.get("explicit-script").language, "shell");
+  assert.equal(files.get("run.bash").measurement, "basic");
+  assert.equal(files.get("run.bash").comment_analysis, "unsupported");
+  assert.equal(files.get("explicit-script").measurement, "basic");
+  assert.equal(files.get("explicit-script").comment_analysis, "unsupported");
   assert.equal(result.input.config.rules[0].language, "shell-bash");
   assert.ok(result.diagnostics.some((item) => item.code === "SHEBANG_UNSUPPORTED" && item.path === "complex-script"));
   assert.ok(result.diagnostics.some((item) => item.code === "SHEBANG_DIALECT_MISMATCH" && item.path === "run.bash"));

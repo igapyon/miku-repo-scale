@@ -1,6 +1,6 @@
 ---
 title: miku-repo-scale lexer support and parser selection
-status: implementation-in-progress
+status: RSC-12-integrated
 updated: 2026-11-06
 ---
 
@@ -10,10 +10,10 @@ updated: 2026-11-06
 
 **Decision (2026-11-06):** use the WebAssembly build of the Tree-sitter parser
 family for JavaScript, TypeScript/TSX, Python, Java, and Bash. The RSC-09
-JavaScript and TypeScript integrations now connect source ranges to the product
+JavaScript and TypeScript integrations, RSC-10 Python integration, RSC-11 Java
+integration, and RSC-12 Shell integration connect source ranges to the product
 result. The standalone CLI/runtime `.mjs` bundles embed the parser runtime and
 grammar WASM; direct source execution loads the same pinned package assets.
-Python, Java, and Bash still need their language-specific integrations.
 
 The parser family was selected over five hand-maintained lexical scanners
 because it already distinguishes comments from strings, templates, expressions,
@@ -67,17 +67,25 @@ loader embeds those bytes in the single `.mjs`.
 | `.ts`, `.mts`, `.cts`, `.d.ts` | TypeScript grammar | Type declarations and TypeScript expression syntax | No type checking or TypeScript compiler execution |
 | `.tsx` | TSX grammar | TypeScript with JSX, including type arguments and JSX expressions | Kept distinct from `.ts` because `<T>` has different syntax |
 | `.py` | Python grammar | Python 3 grammar represented by the pinned grammar, including PEP 701 f-string expressions | Python source is parsed only; it is never executed |
-| `.java` | Java grammar | Grammar-supported Java including records and text blocks | Java Unicode escapes must be translated before parsing; no type checking or compiler execution |
+| `.java` | Java grammar after JLS Unicode translation | Grammar-supported Java including records and text blocks; Unicode escapes follow JLS §3.3 and comment ranges map to raw UTF-16 source offsets | No type checking or compiler execution |
 | `.bash`, Bash shebang | Bash grammar | Bash syntax, command substitution, heredoc delimiters and bodies | Parser errors or missing nodes make lexical metrics unavailable |
-| `.sh`, `sh` shebang | Bash grammar for common POSIX-compatible input | Common POSIX shell syntax accepted by the pinned Bash grammar | This does not certify full POSIX `sh` conformance; Bash-only constructs in `sh` files must be diagnosed |
+| `.sh`, `sh` shebang | Bash grammar for common POSIX-compatible input | Common POSIX shell syntax accepted by the pinned Bash grammar | This does not certify full POSIX `sh` conformance; detected Bash-only constructs are marked unsupported |
 | `.zsh`, Zsh shebang or explicit Zsh dialect | None | Basic text metrics and shell classification remain available | Comment/code analysis is `unsupported` until a Zsh grammar is selected and verified |
 
-**Current integration (RSC-09):** JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`),
-TypeScript (`.ts`, `.mts`, `.cts`, `.d.ts`), and TSX (`.tsx`) are connected to
-the result API. Fixtures confirm regex and JSX text are not mistaken for
-comments, while template/JSX expression comments retain UTF-16 source ranges.
-Shebangs count as code. Python, Java, and Shell are selected but still return
-`comment_analysis: unsupported` until RSC-10 through RSC-12.
+**Current integration (RSC-09–12):** JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`),
+TypeScript (`.ts`, `.mts`, `.cts`, `.d.ts`), TSX (`.tsx`), Python (`.py` or a
+supported Python shebang), Java (`.java`), Bash (`.bash` and Bash shebang), and
+common POSIX-compatible `sh` (`.sh` and `sh` shebang) are connected to the
+result API. Fixtures confirm regex/JSX, Python strings, Java strings/chars,
+text blocks, shell words/quotes, substitutions, and heredoc bodies are not
+mistaken for comments. Java Unicode escapes can create comments and line
+endings, while Shell CRLF normalization maps comment ranges to the original
+UTF-16 source. Shebangs, docstrings, text blocks, and heredoc bodies count as
+code. Zsh remains unsupported. Under `sh`, detected `[[ ]]`, arrays,
+arithmetic commands, C-style `for`, process substitution, here-strings,
+`coproc`, ANSI-C quotes, and the Bash `function` keyword make comment analysis
+unsupported. This is a conservative syntax guard for syntax nodes exposed by
+the pinned grammar, not a complete POSIX conformance check.
 
 Language, extension, explicit configuration, basename, and shebang continue to
 be resolved by the existing ordered classification rules. A parser failure,
@@ -91,17 +99,21 @@ The shared range unit is **UTF-16 code units**, matching Node.js string
 indices and `src/physical-lines.mjs`. The pinned WebAssembly runtime returned
 index 3 for a comment following `😀 `, which is the expected UTF-16 offset.
 RSC-08 validates ranges against the original text, then maps covered
-characters onto original physical lines. The runtime uses those ranges for
-JavaScript and TypeScript; Java preprocessing still needs its own source map.
+characters onto original physical lines. JavaScript, TypeScript, and Python use
+raw source offsets directly; Java maps parser offsets through its compact
+Unicode-translation source map; Shell normalizes CRLF/lone-CR terminators and
+maps the resulting comment spans onto the original UTF-16 text. Physical-line
+counting always uses the original text.
 
-Java needs one language-specific preprocessing step. The Java Language
-Specification requires Unicode escapes to be translated before tokenization;
-an escape can introduce `/`, `*`, or a line terminator and therefore create or
-end a comment. RSC-11 must implement the JLS backslash-eligibility rules, keep a
-translated-offset-to-original-offset map, and map parser comments back before
-physical-line classification. The RSC-02 experiment covered simple escapes
-that create a block comment, a line comment, and a line terminator; it did not
-implement the full JLS eligibility algorithm.
+Java preprocessing follows the JLS §3.3 eligibility rules. An eligible
+backslash followed by one or more `u` markers and four hexadecimal digits is
+translated once; the resulting character is not recursively translated. A
+malformed eligible escape makes Java lexical analysis fail. Translation keeps
+compact source-map segments, maps comment ranges back to the original UTF-16
+source, and leaves physical-line counting on the unmodified text. The tests
+cover escape-generated block and line comments, escaped line endings, paired
+backslashes, escape-generated backslashes, repeated `u` markers, and
+non-recursive translation.
 
 ## Reproduction fixtures and observations
 
@@ -117,17 +129,19 @@ snippets through `rootNode.hasError`.
 | `javascript-tsx.tsx` | Regex slashes and JSX attribute text are not comments; template-expression comments are | `51..77`, `154..187` |
 | `python-pep701.py` | Same-quote string access and a multiline PEP 701 expression comment parse | `46..71` |
 | `java-text-block.java` | Comment markers inside a valid text block are not comments | `148..170` |
-| `java-unicode-escapes.java` | Translation creates block/line comments; source-map restoration expands the two spans | `32..82`, `100..137` |
+| `java-unicode-escapes.java` | JLS translation creates block/line comments; source-map restoration expands the two spans | `32..82`, `100..137` |
 | `shell-heredoc.bash` | Heredoc text and `${HOME#prefix}` are not comments; the command-substitution and trailing comments are | `89..119`, `126..148` |
 
 The one-file parser prototype was built and executed on Node.js 26.12.1 and
 Node.js 22.23.4. Each of the six grammars (JavaScript, TypeScript, TSX, Python,
 Java, Bash) parsed its valid smoke input with `hasError === false`. The parser
-prototype was 6,422,960 bytes before application code was added. The integrated
-JavaScript/TypeScript CLI bundle is 6,507,990 bytes and the runtime bundle is
-6,502,819 bytes. On Node.js 22.23.4, the focused parser tests and isolated
-CLI/runtime/source artifact checks pass. Startup time, large-file memory use,
-and the broader OS matrix are still unmeasured.
+prototype was 6,422,960 bytes before application code was added. After RSC-12,
+all 42 tests and artifact checks pass on Node.js 26.12.1, including isolated
+CLI/runtime smoke for Bash and `sh`. Node.js 22.23.4 was verified through RSC-11
+but has not yet been rerun for the Shell integration. Current CLI/runtime bundle
+sizes and complete command details are recorded in [development.md](development.md).
+Startup time, large-file memory use, and the broader OS matrix remain
+unmeasured.
 
 ## Primary references
 
@@ -136,3 +150,4 @@ and the broader OS matrix are still unmeasured.
 - [Python PEP 701](https://peps.python.org/pep-0701/) and [Python lexical analysis](https://docs.python.org/3/reference/lexical_analysis.html)
 - [Java Language Specification §3.3, Unicode escapes](https://docs.oracle.com/javase/specs/jls/se26/html/jls-3.html#jls-3.3)
 - [Tree-sitter Bash grammar](https://github.com/tree-sitter/tree-sitter-bash)
+- [Bash comments](https://www.gnu.org/s/bash/manual/html_node/Comments.html), [quoting](https://www.gnu.org/software/bash/manual/html_node/Quoting.html), and [here-documents / here-strings](https://www.gnu.org/s/bash/manual/html_node/Redirections.html)
