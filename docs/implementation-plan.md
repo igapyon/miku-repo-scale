@@ -2,14 +2,14 @@
 title: miku-repo-scale Node.js 初期版の実装計画
 status: in-progress
 created: 2026-11-05
-updated: 2026-11-06
+updated: 2026-11-08
 ---
 
 # miku-repo-scale：Node.js 初期版の実装計画
 
 ## 1. 対象と到達点
 
-[初期設計](design.md)を実装可能な作業単位へ分解する。利用者の判断により Node.js + Git の単体 `.mjs` runtime を維持し、敵対的な同時 path 置換に対する atomic containment は製品保証の対象外とする。この scope の M1 ローカル受入は macOS / Node.js 22・26 で完了した。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。companion repository の RSC-14 と RSC-15a-b も Node.js 22/26 でテストし、installable bundle と local ZIP を確認した。次は hosted RSC-15c matrix と RSC-15d conversation/release review。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
+[初期設計](design.md)を実装可能な作業単位へ分解する。利用者の判断により Node.js + Git の単体 `.mjs` runtime を維持し、敵対的な同時 path 置換に対する atomic containment は製品保証の対象外とする。この scope の M1 ローカル受入は macOS / Node.js 22・26 で完了した。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。v0.2.4 hosted release workflow と artifact handoff も完了した。製品の3×3 OS/Node CI matrix を追加し、hosted 初回実行と companion repository の RSC-15c matrix、RSC-15d conversation/release review が残る。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
 
 初期版は JavaScript ESM と Node.js に実装を集約する。対象 repository の Git tracked files の現在の内容を読み、形式・役割・用途を分類し、規模と計測範囲を JSON で返す。スキルは固定した同梱 CLI を呼び、結果を説明する。
 
@@ -320,7 +320,7 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 ## 6. 次に実装へ渡す単位
 
-**次は companion の RSC-15c hosted matrix と RSC-15d release-readiness を進める。** RSC-14 と RSC-15a-b は実装済みだが、GitHub Actions の結果はまだない。SR-01 は best-effort の残存リスクとして[対応計画](self-review-remediation-plan.md)に記録した。製品 M1 のローカル受入は完了し、RSC-15 の hosted OS/Node matrix と artifact handoff が残る。
+**次は製品 3×3 OS/Node matrix の hosted 実行と companion の RSC-15c matrix を確認し、RSC-15d release-readiness を閉じる。** 製品 v0.2.4 release と artifact handoff は完了した。SR-01 は best-effort の残存リスクとして[対応計画](self-review-remediation-plan.md)に記録した。製品 matrix と companion hosted matrix の結果が未確認のため、全体の最終受入は継続中。
 
 この順序により、TXT/HTML/JSON/JSONL/Markdown/YAML とその他のテキストの基本計測、TypeScript の形式識別、指示ソースの分類を初期の成果に含めつつ、後続のコード・コメント解析と配布に同じ契約を使える。
 
