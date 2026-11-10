@@ -2,7 +2,14 @@
 
 ## Current state
 
-Current package version: `0.2.4`.
+Current package version: `0.2.5` (development; not released).
+
+2026-11-09: incremented package version `0.2.4` → `0.2.5`; the latest
+published release remains `0.2.4`. The first hosted product matrix log showed
+Windows / Node.js 22 failing in the CLI artifact smoke during `build:bundle`.
+The smoke assertion now includes the CLI's stdout and process error so the
+structured failure is visible. Local `npm test` passes all 43 tests; the hosted
+rerun is pending.
 
 2026-11-08: version `0.2.4` was released. The
 [hosted release workflow](https://github.com/igapyon/miku-repo-scale/actions/runs/42482909075)
@@ -104,9 +111,9 @@ with Node.js 22, 24, and 26.
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
 Push a Git tag `v<package-version>` or `v<package-version>.N`,
-where N is a positive integer with no leading zero. For package `0.2.4`,
-`v0.2.4` and `v0.2.4.2` are accepted; `v0.2.5`, `.notes`, and `.0` are rejected.
-The suffix changes asset filenames, while embedded metadata stays `0.2.4`.
+where N is a positive integer with no leading zero. For package `0.2.5`,
+`v0.2.5` and `v0.2.5.2` are accepted; `v0.2.6`, `.notes`, and `.0` are rejected.
+The suffix changes asset filenames, while embedded metadata stays `0.2.5`.
 
 The workflow runs only on `v*` tag pushes. It checks out that exact tag,
 installs locked dependencies, builds and tests on Node.js 26, stages

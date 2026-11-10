@@ -98,7 +98,11 @@ export function checkCli(path, pkg = readPackage()) {
     for (const text of [pkg.name, "analyze", "--version", "--help", "--inventory", "--detail"]) assert.ok(help.includes(text), text);
     const repository = makeSmokeRepository(cwd);
     const analysis = spawnSync(process.execPath, [isolatedPath, "analyze", repository, "--detail", "summary"], { cwd, encoding: "utf8", timeout: 10000 });
-    assert.equal(analysis.status, 0, analysis.stderr);
+    assert.equal(analysis.status, 0, [
+      `CLI analysis failed (status=${analysis.status}, signal=${analysis.signal ?? "none"}, error=${analysis.error?.message ?? "none"})`,
+      analysis.stderr,
+      analysis.stdout,
+    ].filter(Boolean).join("\n"));
     const result = JSON.parse(analysis.stdout);
     assert.equal(result.schema_version, "miku-repo-scale.result/v1");
     assert.equal(result.tool.version, pkg.version);
