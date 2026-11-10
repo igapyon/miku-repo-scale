@@ -3,8 +3,11 @@
 ## Current state
 
 2026-11-08: PR #5 merged product version `0.2.4`; the hosted release workflow
-passed and published three assets. The product 3×3 OS/Node CI workflow is now
-defined locally and awaits a hosted run. To keep the Node.js + Git single-file
+passed and published three assets. On 2026-11-09, package version `0.2.5` was
+started as the next development version; it is not released. The first product
+3×3 OS/Node CI run failed in Windows / Node.js 22 during the CLI artifact smoke
+in `build:bundle`. The assertion now reports CLI stdout and spawn errors; its
+hosted rerun remains pending. To keep the Node.js + Git single-file
 runtime simple, the product uses best-effort filesystem checks and does not
 promise isolation from malicious concurrent path replacement. M1 local
 acceptance passed all 43 tests on Node.js 26.12.1 and 22.23.4 on macOS. Companion
@@ -34,7 +37,7 @@ checks on macOS / Node 22 and 26; its hosted matrix has not rerun against runtim
 - [x] RSC-15a-b (SKILL): isolated CLI smoke and metric acceptance for instructions, JSON/JSONL, TypeScript, binary files, and ignore metadata.
 - [ ] RSC-15c (SKILL): run hosted Node 22/24/26 and Ubuntu/macOS/Windows matrix; verify Ubuntu ZIP build there.
 - [ ] RSC-15d (SKILL): conversation cases and release-readiness review.
-- [ ] RSC-15 (APP): local Node 22/26 acceptance and v0.2.4 artifact handoff pass; new 3×3 hosted OS/Node matrix awaits its first run.
+- [ ] RSC-15 (APP): local Node 22/26 acceptance and v0.2.4 artifact handoff pass; the new 3×3 hosted matrix has a reported Windows / Node 22 failure and awaits rerun.
 
 Task details and dependencies: [implementation plan](docs/implementation-plan.md).
 RSC-14 and skill-specific RSC-15 are owned by `miku-repo-scale-skills`.
