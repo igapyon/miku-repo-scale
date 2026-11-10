@@ -9,7 +9,7 @@ updated: 2026-11-10
 
 ## 1. 対象と到達点
 
-[初期設計](design.md)を実装可能な作業単位へ分解する。利用者の判断により Node.js + Git の単体 `.mjs` runtime を維持し、敵対的な同時 path 置換に対する atomic containment は製品保証の対象外とする。この scope の M1 ローカル受入は macOS / Node.js 22・26 で完了した。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。v0.2.8 tag が存在し、package version 0.2.9 を開発中。Windows matrix で検出した root path の誤判定、CRLF による shell fixture offset 差、ignore metadata と tar 一覧の platform 差はローカル修正済み。最新の Windows matrix では `.git` output-protection failure が残ったため、既存親 directory を Git の `--is-inside-git-dir` で検査するよう変更し、ローカル全テスト 45 件が通過した。hosted 再実行を待つ。companion repository の RSC-15c matrix と RSC-15d conversation/release review も残る。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
+[初期設計](design.md)を実装可能な作業単位へ分解する。利用者の判断により Node.js + Git の単体 `.mjs` runtime を維持し、敵対的な同時 path 置換に対する atomic containment は製品保証の対象外とする。この scope の M1 ローカル受入は macOS / Node.js 22・26 で完了した。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。PR #11 で package version `0.2.9` がマージされ、tag `v0.2.9` はその merge commit を指す。現在の開発版は `0.2.10`。2026-11-10、GitHub Actions の Node.js 22/24/26 × Ubuntu/macOS/Windows matrix が成功し、Windows `.git` output-protection 修正も hosted 環境で確認できた。APP の今回の受入作業は完了。companion repository の RSC-15c matrix と RSC-15d conversation/release review は別作業として残る。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
 
 初期版は JavaScript ESM と Node.js に実装を集約する。対象 repository の Git tracked files の現在の内容を読み、形式・役割・用途を分類し、規模と計測範囲を JSON で返す。スキルは固定した同梱 CLI を呼び、結果を説明する。
 
@@ -121,7 +121,7 @@ brace 記法は予定ファイルの列挙であり、その名前のディレ�
 
 **完了条件：** 後続実装が依存する schema と用語が揃い、各受入ケースの観測可能な期待値が存在する。
 
-**現状（2026-11-08）：** schema は Ajv 2020-12 で result/config を実検証する。path identity と diagnostic regression は追加済み。文書化した filesystem scope の下で M1 のローカル受入は完了。hosted OS/Node matrix は RSC-15 に残る。
+**現状（2026-11-08時点）：** schema は Ajv 2020-12 で result/config を実検証する。path identity と diagnostic regression は追加済み。文書化した filesystem scope の下で M1 のローカル受入は完了。hosted OS/Node matrix は RSC-15 に残っていた。**更新（2026-11-10）：** RSC-15 の product hosted matrix は Node.js 22/24/26 × Ubuntu/macOS/Windows で成功し、Windows `.git` output-protection regression も確認済み。
 
 ### RSC-02：字句解析の可否を先に確認
 
@@ -298,6 +298,8 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 **実績（2026-11-07）：** RSC-15a-b の isolated runtime smoke と metric acceptance は Node.js 22/26 で通過。RSC-15c hosted OS/Node matrix と RSC-15d conversation/release review は未完了。
 
+**実績（2026-11-10）：** PR #11 をマージし、`v0.2.9` tag が merge commit を指す。GitHub Actions の Node.js 22/24/26 × Ubuntu/macOS/Windows matrix が成功し、APP の RSC-15 hosted verification は完了した。Skill 固有の RSC-15c/d は companion repository の作業として別管理する。
+
 ## 5. 検証コマンドと記録の扱い
 
 計画時の標準コマンドは次の通り。現在の実行結果は [development.md](development.md) と companion の開発記録に記す。
@@ -320,7 +322,7 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 ## 6. 次に実装へ渡す単位
 
-**次は製品 3×3 OS/Node matrix の hosted 再実行と companion の RSC-15c matrix を確認し、RSC-15d release-readiness を閉じる。** 製品 v0.2.8 tag は存在し、package version 0.2.9 を開発中。Windows root 誤判定、fixture line-ending 差、ignore metadata、tar 一覧の問題を修正し、直近の `.git` output-protection failure もローカルで修正済みだが hosted 確認は未完了。SR-01 は best-effort の残存リスクとして[対応計画](self-review-remediation-plan.md)に記録した。製品 matrix と companion hosted matrix の結果が未確認のため、全体の最終受入は継続中。
+**APP の今回の受入作業は完了。** PR #11 と `v0.2.9` tag が merge commit に揃い、Windows 修正を含む Node.js 22/24/26 × Ubuntu/macOS/Windows matrix が成功した。次の開発版 `0.2.10` を設定済み。SR-01 は best-effort の残存リスクとして[対応計画](self-review-remediation-plan.md)に記録している。companion skill の RSC-15c/d は別 repository の作業であり、この APP の完了を妨げない。
 
 この順序により、TXT/HTML/JSON/JSONL/Markdown/YAML とその他のテキストの基本計測、TypeScript の形式識別、指示ソースの分類を初期の成果に含めつつ、後続のコード・コメント解析と配布に同じ契約を使える。
 

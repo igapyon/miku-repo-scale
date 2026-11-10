@@ -2,27 +2,21 @@
 
 ## Current state
 
-2026-11-08: PR #5 merged product version `0.2.4`; the hosted release workflow
-passed and published three assets. On 2026-11-09, package version `0.2.5` was
-started as the next development version. PR #7 published `v0.2.5`; PR #8 then
-published `v0.2.6` with three assets. PR #9 merged the `0.2.7` update and tag
-`v0.2.7` exists. PR #10 merged package version `0.2.8` and tag `v0.2.8` exists.
-Package version `0.2.9` is now in development for the Windows output-protection
-follow-up.
-Windows CI exposed a false `ROOT_NOT_REPOSITORY_ROOT`, shell fixture offsets
-changed under CRLF checkout, and failures in ignore metadata, `.git` output
-protection, and source archive listing. Root detection uses Git's
-`--show-prefix`, lexer fixtures are pinned to LF, and the tests normalize global
-config paths and tar output. The latest Windows matrix narrowed the remaining
-failure to `.git` output protection; the output-parent check now asks Git
-whether it is inside the administrative directory. Local `npm test` passes all
-45 tests; the hosted rerun remains pending. To keep the Node.js + Git single-file
-runtime simple, the product uses best-effort filesystem checks and does not
-promise isolation from malicious concurrent path replacement. M1 local
-acceptance passed all 43 tests on Node.js 26.12.1 and 22.23.4 on macOS. Companion
-RSC-14 and RSC-15a-b pass local runtime, bundle, metric-acceptance, and ZIP
-checks on macOS / Node 22 and 26; its hosted matrix has not rerun against runtime
-0.2.2. See the
+Release history: PR #5 published `v0.2.4`; PR #7 published `v0.2.5`; PR #8
+published `v0.2.6`; PR #9 merged `0.2.7`; PR #10 merged `0.2.8`; PR #11
+merged and tagged `v0.2.9`.
+2026-11-10: PR #11 merged package version `0.2.9`; tag `v0.2.9` points to the
+merge commit. Package version `0.2.10` is now in development. The GitHub Actions
+Node.js matrix for `0.2.9` succeeded on Ubuntu, macOS, and Windows with Node.js
+22, 24, and 26; local `npm test` passed all 45 tests on that version. The Windows
+`.git` output-protection fix is confirmed. No APP implementation work remains
+for this fix. The separate companion-skill RSC-15c/d items remain tracked below.
+To keep the Node.js + Git single-file runtime simple, the product uses
+best-effort filesystem checks and does not promise isolation from malicious
+concurrent path replacement. M1 local acceptance passed all 43 tests on Node.js
+26.12.1 and 22.23.4 on macOS. Companion RSC-14 and RSC-15a-b pass local runtime,
+bundle, metric-acceptance, and ZIP checks on macOS / Node 22 and 26; its hosted
+matrix has not rerun against runtime 0.2.2. See the
 [remediation plan](docs/self-review-remediation-plan.md) and
 [language support](docs/language-support.md).
 
@@ -40,13 +34,13 @@ checks on macOS / Node 22 and 26; its hosted matrix has not rerun against runtim
 - [x] RSC-09: connect JavaScript, TypeScript, JSX, and TSX parsers; embed their grammars in standalone bundles and diagnose parse failures.
 - [x] RSC-10: connect the Python grammar; classify f-string comments, docstrings, string forms, shebangs, and parse failures.
 - [x] RSC-11: Java parser, JLS Unicode escape translation/source mapping, and original physical-line metrics.
-- [x] RSC-12: Shell and dialects; map CRLF source ranges and reject selected Bash-only syntax under `sh`. **M2 language-aware measurement and local acceptance are complete; hosted OS/Node verification remains open.**
+- [x] RSC-12: Shell and dialects; map CRLF source ranges and reject selected Bash-only syntax under `sh`. M2 language-aware measurement and hosted OS/Node verification passed as part of RSC-15 on 2026-11-10.
 - [x] RSC-13: verify Shell-enabled source/dist/CLI/runtime parity, version, and SHA-256 on Node 22/26. The v0.2.4 hosted release workflow passed and published the assets.
 - [x] RSC-14 (SKILL): pin and verify the upstream CLI, add a thin adapter, and build an installable bundle.
 - [x] RSC-15a-b (SKILL): isolated CLI smoke and metric acceptance for instructions, JSON/JSONL, TypeScript, binary files, and ignore metadata.
 - [ ] RSC-15c (SKILL): run hosted Node 22/24/26 and Ubuntu/macOS/Windows matrix; verify Ubuntu ZIP build there.
 - [ ] RSC-15d (SKILL): conversation cases and release-readiness review.
-- [ ] RSC-15 (APP): local Node 22/26 acceptance pass and v0.2.8 tag created; Windows matrix exposed platform-specific failures. The `.git` output-protection fix passes all 45 local tests; hosted rerun is pending.
+- [x] RSC-15 (APP): local Node 22/26 acceptance passed, PR #11 merged and tagged `v0.2.9`, and the GitHub Actions Node 22/24/26 × Ubuntu/macOS/Windows matrix passed.
 
 Task details and dependencies: [implementation plan](docs/implementation-plan.md).
 RSC-14 and skill-specific RSC-15 are owned by `miku-repo-scale-skills`.
@@ -63,7 +57,7 @@ Execution order: fixture/access boundary → SR-01 → SR-02 → SR-05 → SR-04
 - [x] SR-06 / P2: retain raw path base64 in summary diagnostics.
 - [x] SR-03 / P2: configure artifact creation and attachment on v tag push; actionlint and local release smoke pass.
 - [x] Rebuild artifacts; verify source/bundle, schema, Node 22/26, and the three injected read-boundary races.
-- [x] Complete product reacceptance under the documented threat model; hosted OS/Node verification remains open.
+- [x] Complete product reacceptance under the documented threat model; the hosted OS/Node matrix passed on 2026-11-10.
 
 Details, expected results, and completion gates: [remediation plan](docs/self-review-remediation-plan.md).
 
