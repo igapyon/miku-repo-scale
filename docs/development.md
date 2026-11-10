@@ -2,21 +2,17 @@
 
 ## Current state
 
-Current package version: `0.2.6` (development; not released).
+Current package version: `0.2.7` (development; not released).
 
-2026-11-10: PR #7 published release `v0.2.5` with the CLI, runtime, and source
-archive. Package version `0.2.6` is now in development. The Windows / Node.js
-22 matrix failure was traced to a false root-path rejection; root detection now
-uses Git's `--show-prefix`. Local `npm test` passes all 43 tests; the hosted
-matrix rerun remains pending.
+2026-11-10: PR #8 published release `v0.2.6` with the CLI, runtime, and source
+archive. Package version `0.2.7` is now in development. The Windows matrix
+first exposed a false root-path rejection, fixed by using Git's
+`--show-prefix`; a later run exposed shell fixture offsets changing under CRLF
+checkout. `.gitattributes` now pins lexer fixtures to LF. Local `npm test`
+passes all 43 tests; the hosted rerun remains pending.
 
 2026-11-09: incremented package version `0.2.4` → `0.2.5`; the latest
 published release at that time remained `0.2.4`.
-
-2026-11-10: the Windows / Node.js 22 matrix log showed the CLI smoke receiving
-`ROOT_NOT_REPOSITORY_ROOT` for its actual repository root. The check compared
-canonical path strings; root detection now uses Git's `--show-prefix`. Local
-`npm test` passes all 43 tests. The hosted Windows rerun remains pending.
 
 2026-11-08: version `0.2.4` was released. The
 [hosted release workflow](https://github.com/igapyon/miku-repo-scale/actions/runs/42482909075)
@@ -118,9 +114,9 @@ with Node.js 22, 24, and 26.
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
 Push a Git tag `v<package-version>` or `v<package-version>.N`,
-where N is a positive integer with no leading zero. For package `0.2.6`,
-`v0.2.6` and `v0.2.6.2` are accepted; `v0.2.7`, `.notes`, and `.0` are rejected.
-The suffix changes asset filenames, while embedded metadata stays `0.2.6`.
+where N is a positive integer with no leading zero. For package `0.2.7`,
+`v0.2.7` and `v0.2.7.2` are accepted; `v0.2.8`, `.notes`, and `.0` are rejected.
+The suffix changes asset filenames, while embedded metadata stays `0.2.7`.
 
 The workflow runs only on `v*` tag pushes. It checks out that exact tag,
 installs locked dependencies, builds and tests on Node.js 26, stages

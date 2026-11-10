@@ -1,6 +1,6 @@
 {
   "name": "miku-repo-scale",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "description": "Deterministic measurement of repository text, source code, instructions, data, and binary assets.",
   "license": "Apache-2.0",

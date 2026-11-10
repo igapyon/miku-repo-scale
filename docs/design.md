@@ -1,6 +1,6 @@
 # miku-repo-scale：Node.js によるリポジトリ規模・構成計測の初期設計
 
-2026-11-05設計、2026-11-10更新。状態：RSC-08〜12 の JavaScript / TypeScript / JSX / TSX / Python / Java / Shell 字句解析を接続済み。SR-01 は単体 Node.js runtime を維持し、敵対的な同時 path 置換を保証対象外とする方針を記録した。文書化した scope の下で M1 のローカル受入と v0.2.5 release は完了。製品 OS/Node matrix と installable skill の hosted 最終受入は後続作業。[対応計画](self-review-remediation-plan.md)を参照。
+2026-11-05設計、2026-11-10更新。状態：RSC-08〜12 の JavaScript / TypeScript / JSX / TSX / Python / Java / Shell 字句解析を接続済み。SR-01 は単体 Node.js runtime を維持し、敵対的な同時 path 置換を保証対象外とする方針を記録した。文書化した scope の下で M1 のローカル受入と v0.2.6 release は完了。製品 OS/Node matrix と installable skill の hosted 最終受入は後続作業。[対応計画](self-review-remediation-plan.md)を参照。
 
 実装作業は [Node.js 初期版の実装計画](implementation-plan.md) の RSC-00〜15 に分解した。
 
