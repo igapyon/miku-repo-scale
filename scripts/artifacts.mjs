@@ -135,7 +135,8 @@ export function checkRuntime(path, pkg = readPackage()) {
 
 export function checkSources(path, projectRoot = root) {
   requireFile(path);
-  const entries = execFileSync("tar", ["-tzf", path], { encoding: "utf8", timeout: 10000 }).trimEnd().split("\n");
+  const entries = execFileSync("tar", ["-tzf", path], { encoding: "utf8", timeout: 10000 })
+    .replace(/\r\n/gu, "\n").trimEnd().split("\n");
   assert.deepEqual(entries, sourceFiles(projectRoot), "Source archive must contain exactly the curated source files");
   const archived = JSON.parse(execFileSync("tar", ["-xOf", path, "package.json"], { encoding: "utf8", timeout: 10000 }));
   assert.equal(archived.name, product);

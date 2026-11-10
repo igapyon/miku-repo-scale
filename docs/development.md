@@ -2,14 +2,16 @@
 
 ## Current state
 
-Current package version: `0.2.7` (development; not released).
+Current package version: `0.2.8` (development; not yet tagged).
 
-2026-11-10: PR #8 published release `v0.2.6` with the CLI, runtime, and source
-archive. Package version `0.2.7` is now in development. The Windows matrix
-first exposed a false root-path rejection, fixed by using Git's
-`--show-prefix`; a later run exposed shell fixture offsets changing under CRLF
-checkout. `.gitattributes` now pins lexer fixtures to LF. Local `npm test`
-passes all 43 tests; the hosted rerun remains pending.
+2026-11-10: PR #8 published release `v0.2.6`; PR #9 merged package version
+`0.2.7`, tag `v0.2.7` exists, and package version `0.2.8` is in development.
+Windows CI successively exposed a false root
+path rejection, shell fixture offsets changing under CRLF checkout, and three
+Windows / Node.js 26 test failures. Root detection uses Git's `--show-prefix`,
+lexer fixtures are pinned to LF, and local fixes cover Windows path casing,
+test config paths, and CRLF in tar listings. Local `npm test` passes all 44
+tests; the hosted rerun remains pending.
 
 2026-11-09: incremented package version `0.2.4` → `0.2.5`; the latest
 published release at that time remained `0.2.4`.
@@ -114,9 +116,9 @@ with Node.js 22, 24, and 26.
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
 Push a Git tag `v<package-version>` or `v<package-version>.N`,
-where N is a positive integer with no leading zero. For package `0.2.7`,
-`v0.2.7` and `v0.2.7.2` are accepted; `v0.2.8`, `.notes`, and `.0` are rejected.
-The suffix changes asset filenames, while embedded metadata stays `0.2.7`.
+where N is a positive integer with no leading zero. For package `0.2.8`,
+`v0.2.8` and `v0.2.8.2` are accepted; `v0.2.9`, `.notes`, and `.0` are rejected.
+The suffix changes asset filenames, while embedded metadata stays `0.2.8`.
 
 The workflow runs only on `v*` tag pushes. It checks out that exact tag,
 installs locked dependencies, builds and tests on Node.js 26, stages

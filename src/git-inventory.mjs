@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { lstatSync, readdirSync, realpathSync } from "node:fs";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { isAbsolute, relative, resolve, sep, win32 } from "node:path";
 
 function gitText(root, args) {
   const output = execFileSync("git", ["-C", root, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 30000 });
@@ -273,7 +273,14 @@ export function currentIndexFingerprint(root) {
   } catch { return null; }
 }
 
-export function isInsideGitAdministration(path, gitDir, commonDir) {
-  const normalized = resolve(path);
-  return [gitDir, commonDir].some((directory) => normalized === directory || normalized.startsWith(`${directory}${sep}`));
+export function isInsideGitAdministration(path, gitDir, commonDir, platform = process.platform) {
+  const pathApi = platform === "win32" ? win32 : { resolve };
+  const normalized = pathApi.resolve(path);
+  const comparisonPath = platform === "win32" ? normalized.toLowerCase() : normalized;
+  const separator = platform === "win32" ? "\\" : sep;
+  return [gitDir, commonDir].some((directory) => {
+    const base = pathApi.resolve(directory);
+    const comparisonBase = platform === "win32" ? base.toLowerCase() : base;
+    return comparisonPath === comparisonBase || comparisonPath.startsWith(`${comparisonBase}${separator}`);
+  });
 }

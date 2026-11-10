@@ -5,12 +5,15 @@
 2026-11-08: PR #5 merged product version `0.2.4`; the hosted release workflow
 passed and published three assets. On 2026-11-09, package version `0.2.5` was
 started as the next development version. PR #7 published `v0.2.5`; PR #8 then
-published `v0.2.6` with three assets. Package version `0.2.7` is now in
-development. The product 3×3 OS/Node CI exposed Windows failures: first a false
-`ROOT_NOT_REPOSITORY_ROOT` from comparing canonical path strings, then shell
-fixture offsets changed under CRLF checkout. Root detection uses Git's
-`--show-prefix`, and `.gitattributes` now pins lexer fixtures to LF. Local
-`npm test` passes all 43 tests; the hosted rerun remains pending. To keep the Node.js + Git single-file
+published `v0.2.6` with three assets. PR #9 merged the `0.2.7` update and the
+`v0.2.7` tag exists and package version `0.2.8` is now in development. Windows
+CI exposed a false `ROOT_NOT_REPOSITORY_ROOT`,
+then shell fixture offsets changed under CRLF checkout, followed by three
+Windows / Node.js 26 failures in ignore metadata, `.git` output protection, and
+source archive listing. Root detection uses Git's `--show-prefix`, lexer
+fixtures are pinned to LF, and local fixes now normalize Windows paths, test
+configuration paths, and tar output. Local `npm test` passes all 44 tests; the
+hosted rerun remains pending. To keep the Node.js + Git single-file
 runtime simple, the product uses best-effort filesystem checks and does not
 promise isolation from malicious concurrent path replacement. M1 local
 acceptance passed all 43 tests on Node.js 26.12.1 and 22.23.4 on macOS. Companion
@@ -40,7 +43,7 @@ checks on macOS / Node 22 and 26; its hosted matrix has not rerun against runtim
 - [x] RSC-15a-b (SKILL): isolated CLI smoke and metric acceptance for instructions, JSON/JSONL, TypeScript, binary files, and ignore metadata.
 - [ ] RSC-15c (SKILL): run hosted Node 22/24/26 and Ubuntu/macOS/Windows matrix; verify Ubuntu ZIP build there.
 - [ ] RSC-15d (SKILL): conversation cases and release-readiness review.
-- [ ] RSC-15 (APP): local Node 22/26 acceptance pass and v0.2.6 release assets published; the 3×3 hosted matrix exposed Windows fixture line-ending failures. Lexer fixtures are pinned to LF; hosted rerun is pending.
+- [ ] RSC-15 (APP): local Node 22/26 acceptance pass and v0.2.7 tag created; Windows / Node.js 26 exposed three platform-specific failures. Local fixes pass all 44 tests; hosted rerun is pending.
 
 Task details and dependencies: [implementation plan](docs/implementation-plan.md).
 RSC-14 and skill-specific RSC-15 are owned by `miku-repo-scale-skills`.
