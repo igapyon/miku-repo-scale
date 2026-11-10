@@ -29,7 +29,10 @@ export function resolveRepositoryRoot(requestedRoot) {
     throw new Error("Path is not inside a Git working tree");
   }
 
-  if (requestedRoot !== undefined && realpathSync(probePath) !== gitRoot) {
+  // Let Git determine whether this directory is the worktree root. Comparing
+  // canonical path strings can still misclassify the same Windows path when
+  // its drive or component casing differs.
+  if (requestedRoot !== undefined && gitText(probePath, ["rev-parse", "--show-prefix"]) !== "") {
     throw new Error("The supplied path is a subdirectory; provide the Git working-tree root");
   }
   return gitRoot;
