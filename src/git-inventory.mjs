@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { lstatSync, readdirSync, realpathSync } from "node:fs";
-import { isAbsolute, relative, resolve, sep, win32 } from "node:path";
+import { lstatSync, readdirSync, realpathSync, statSync } from "node:fs";
+import { dirname, isAbsolute, relative, resolve, sep, win32 } from "node:path";
 
 function gitText(root, args) {
   const output = execFileSync("git", ["-C", root, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 30000 });
@@ -273,6 +273,27 @@ export function currentIndexFingerprint(root) {
   } catch { return null; }
 }
 
+function gitReportsInsideGitDirectory(path) {
+  let directory = dirname(path);
+  while (true) {
+    try {
+      const canonical = realpathSync(directory);
+      if (statSync(canonical).isDirectory()) {
+        directory = canonical;
+        break;
+      }
+    } catch { /* Walk to the nearest existing parent. */ }
+    const parent = dirname(directory);
+    if (parent === directory) return false;
+    directory = parent;
+  }
+
+  const result = spawnSync("git", ["-C", directory, "rev-parse", "--is-inside-git-dir"], {
+    encoding: "buffer", stdio: ["ignore", "pipe", "ignore"], timeout: 10000,
+  });
+  return !result.error && result.status === 0 && stripGitLineEnding(result.stdout.toString("utf8")) === "true";
+}
+
 export function isInsideGitAdministration(path, gitDir, commonDir, platform = process.platform) {
   const pathApi = platform === "win32" ? win32 : { resolve };
   const normalized = pathApi.resolve(path);
@@ -282,5 +303,5 @@ export function isInsideGitAdministration(path, gitDir, commonDir, platform = pr
     const base = pathApi.resolve(directory);
     const comparisonBase = platform === "win32" ? base.toLowerCase() : base;
     return comparisonPath === comparisonBase || comparisonPath.startsWith(`${comparisonBase}${separator}`);
-  });
+  }) || (platform === process.platform && gitReportsInsideGitDirectory(normalized));
 }

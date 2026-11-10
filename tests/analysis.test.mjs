@@ -119,6 +119,12 @@ test("Git administration path checks are case-insensitive on Windows", () => {
   assert.equal(isInsideGitAdministration("C:\\Repo\\.git-backup\\report.json", "C:\\Repo\\.git", "C:\\Repo\\.git", "win32"), false);
 });
 
+test("Git identifies administrative paths when their spelling differs", (t) => {
+  const repository = join(temporaryDirectory(t), "admin path repository");
+  initRepository(repository);
+  assert.equal(isInsideGitAdministration(join(repository, ".git", "report.json"), join(repository, ".git-mismatch"), join(repository, ".git-mismatch")), true);
+});
+
 test("empty repository, empty text, BOM-only text, and YAML keep zero distinct from null", (t) => {
   const repository = join(temporaryDirectory(t), "empty repository");
   initRepository(repository);
