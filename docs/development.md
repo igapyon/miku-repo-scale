@@ -2,16 +2,18 @@
 
 ## Current state
 
-Current package version: `0.2.8` (development; not yet tagged).
+Current package version: `0.2.9` (development; not yet tagged).
 
 2026-11-10: PR #8 published release `v0.2.6`; PR #9 merged package version
-`0.2.7`, tag `v0.2.7` exists, and package version `0.2.8` is in development.
-Windows CI successively exposed a false root
-path rejection, shell fixture offsets changing under CRLF checkout, and three
-Windows / Node.js 26 test failures. Root detection uses Git's `--show-prefix`,
-lexer fixtures are pinned to LF, and local fixes cover Windows path casing,
-test config paths, and CRLF in tar listings. Local `npm test` passes all 44
-tests; the hosted rerun remains pending.
+`0.2.7` and tag `v0.2.7` exists; PR #10 merged package version `0.2.8` and tag
+`v0.2.8` exists. Package version `0.2.9` is now in development. Windows CI exposed a false root-path rejection, shell fixture
+offsets changing under CRLF checkout, and failures in ignore metadata, `.git`
+output protection, and tar listings. Root detection uses Git's
+`--show-prefix`; lexer fixtures are pinned to LF; the test config path and tar
+listing normalize Windows differences. The latest Windows matrix isolated the
+remaining `.git` output-protection failure; output validation now asks Git
+whether the existing parent directory is inside its administrative area. Local
+`npm test` passes all 45 tests; the hosted rerun remains pending.
 
 2026-11-09: incremented package version `0.2.4` → `0.2.5`; the latest
 published release at that time remained `0.2.4`.
@@ -116,9 +118,9 @@ with Node.js 22, 24, and 26.
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
 Push a Git tag `v<package-version>` or `v<package-version>.N`,
-where N is a positive integer with no leading zero. For package `0.2.8`,
-`v0.2.8` and `v0.2.8.2` are accepted; `v0.2.9`, `.notes`, and `.0` are rejected.
-The suffix changes asset filenames, while embedded metadata stays `0.2.8`.
+where N is a positive integer with no leading zero. For package `0.2.9`,
+`v0.2.9` and `v0.2.9.2` are accepted; `v0.2.10`, `.notes`, and `.0` are rejected.
+The suffix changes asset filenames, while embedded metadata stays `0.2.9`.
 
 The workflow runs only on `v*` tag pushes. It checks out that exact tag,
 installs locked dependencies, builds and tests on Node.js 26, stages
