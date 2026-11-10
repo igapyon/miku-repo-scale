@@ -136,12 +136,10 @@ The one-file parser prototype was built and executed on Node.js 26.12.1 and
 Node.js 22.23.4. Each of the six grammars (JavaScript, TypeScript, TSX, Python,
 Java, Bash) parsed its valid smoke input with `hasError === false`. The parser
 prototype was 6,422,960 bytes before application code was added. After RSC-12,
-all 42 tests and artifact checks pass on Node.js 26.12.1, including isolated
-CLI/runtime smoke for Bash and `sh`. Node.js 22.23.4 was verified through RSC-11
-but has not yet been rerun for the Shell integration. Current CLI/runtime bundle
-sizes and complete command details are recorded in [development.md](development.md).
-Startup time, large-file memory use, and the broader OS matrix remain
-unmeasured.
+the GitHub Actions matrix passed on Node.js 22, 24, and 26 across Ubuntu, macOS,
+and Windows, including Shell integration. Current CLI/runtime bundle sizes and
+complete command details are recorded in [development.md](development.md).
+Startup time and large-file memory use remain unmeasured.
 
 ## Primary references
 

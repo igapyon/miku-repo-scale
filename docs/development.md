@@ -2,18 +2,21 @@
 
 ## Current state
 
-Current package version: `0.2.9` (development; not yet tagged).
+Current package version: `0.2.10` (development); latest tag `v0.2.9` points to
+the PR #11 merge commit.
 
 2026-11-10: PR #8 published release `v0.2.6`; PR #9 merged package version
 `0.2.7` and tag `v0.2.7` exists; PR #10 merged package version `0.2.8` and tag
-`v0.2.8` exists. Package version `0.2.9` is now in development. Windows CI exposed a false root-path rejection, shell fixture
-offsets changing under CRLF checkout, and failures in ignore metadata, `.git`
-output protection, and tar listings. Root detection uses Git's
+`v0.2.8` exists. PR #11 merged package version `0.2.9`, and tag `v0.2.9` points
+to that merge commit. Package version `0.2.10` is now in development. Windows
+CI exposed a false root-path rejection, shell
+fixture offsets changing under CRLF checkout, and failures in ignore metadata,
+`.git` output protection, and tar listings. Root detection uses Git's
 `--show-prefix`; lexer fixtures are pinned to LF; the test config path and tar
-listing normalize Windows differences. The latest Windows matrix isolated the
-remaining `.git` output-protection failure; output validation now asks Git
-whether the existing parent directory is inside its administrative area. Local
-`npm test` passes all 45 tests; the hosted rerun remains pending.
+listing normalize Windows differences. The latest fix asks Git whether the
+existing output parent is inside its administrative area. The GitHub Actions
+matrix for `0.2.9` succeeded on Ubuntu, macOS, and Windows with Node.js 22, 24,
+and 26; local `npm test` passed all 45 tests on that version.
 
 2026-11-09: incremented package version `0.2.4` → `0.2.5`; the latest
 published release at that time remained `0.2.4`.
@@ -21,9 +24,9 @@ published release at that time remained `0.2.4`.
 2026-11-08: version `0.2.4` was released. The
 [hosted release workflow](https://github.com/igapyon/miku-repo-scale/actions/runs/42482909075)
 passed and published the CLI, runtime, and source archive. Local CLI/runtime
-SHA-256 values match the published assets. The product OS/Node matrix is
-defined in [ci.yml](../.github/workflows/ci.yml) and awaits its first hosted
-run; the companion matrix also remains pending.
+SHA-256 values match the published assets. At that time, the product OS/Node
+matrix in [ci.yml](../.github/workflows/ci.yml) awaited its first hosted run;
+the companion matrix was also pending.
 
 2026-11-08: M1 local acceptance under the documented best-effort filesystem
 scope passed all 43 tests on Node.js 26.12.1 and Node.js 22.23.4 on macOS. The full
@@ -38,7 +41,8 @@ CLI output, import API, standalone bundles, and source/dist/bundle parity.
 Self-review remediation is in progress. The product keeps its single-file
 Node.js runtime and treats malicious concurrent path replacement as outside
 its threat model; path checks are best effort. M1 local acceptance passed under
-that scope; hosted OS/Node verification remains open.
+that scope. The 2026-11-10 hosted OS/Node matrix passed; companion skill hosted
+acceptance remains separate.
 RSC-02 selected the WASM parser family, RSC-08
 implemented common comment-range classification, and RSC-09 through RSC-12
 connected JavaScript/TypeScript/JSX/TSX, Python, Java, and Shell. RSC-13
@@ -55,8 +59,8 @@ Always inspect actual Git state before work; do not reset to a historical name.
 ## Runtime and implementation
 
 - Product: JavaScript ESM (`.mjs`), minimum Node.js 22, and Git.
-- Release-build baseline: Node.js 26. Node.js 22 is locally verified; Node 24
-  and the broader OS matrix remain pending.
+- Release-build baseline: Node.js 26. The GitHub Actions matrix passed on Node.js
+  22, 24, and 26 across Ubuntu, macOS, and Windows on 2026-11-10.
 - The distributed `.mjs` files have no npm runtime dependencies. Exact parser
   and grammar development dependencies are embedded into the generated
   standalone bundles. Bash and common POSIX `sh` use the pinned Bash grammar;
@@ -118,9 +122,9 @@ with Node.js 22, 24, and 26.
 The active workflow is
 [release-cli-runtime-bundles.yml](../.github/workflows/release-cli-runtime-bundles.yml).
 Push a Git tag `v<package-version>` or `v<package-version>.N`,
-where N is a positive integer with no leading zero. For package `0.2.9`,
-`v0.2.9` and `v0.2.9.2` are accepted; `v0.2.10`, `.notes`, and `.0` are rejected.
-The suffix changes asset filenames, while embedded metadata stays `0.2.9`.
+where N is a positive integer with no leading zero. For package `0.2.10`,
+`v0.2.10` and `v0.2.10.2` are accepted; `v0.2.11`, `.notes`, and `.0` are rejected.
+The suffix changes asset filenames, while embedded metadata stays `0.2.10`.
 
 The workflow runs only on `v*` tag pushes. It checks out that exact tag,
 installs locked dependencies, builds and tests on Node.js 26, stages
@@ -166,8 +170,8 @@ measurement tests, usable runtime, real bundle smoke, or hosted workflows were r
   Offline `npm ci`, build, bundle, and artifact checks succeeded there; rebuilt
   CLI/runtime bytes matched the original bundles exactly.
 
-These were packaging checks on macOS before the M1 analysis core. GitHub
-execution and the broader Node/OS matrix remain pending.
+These were packaging checks on macOS before the M1 analysis core. The hosted
+Node/OS matrix was verified later, on 2026-11-10.
 
 ## M1 implementation verification (2026-11-06)
 

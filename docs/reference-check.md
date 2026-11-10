@@ -45,7 +45,8 @@ Workflow preparation uses the current official
 [checkout v7](https://github.com/actions/checkout/releases/tag/v7.0.1),
 [setup-node v7](https://github.com/actions/setup-node/releases/tag/v7.1.0), and
 [action-gh-release v3](https://github.com/softprops/action-gh-release/releases/tag/v3.0.3)
-lines. Hosted workflows have not been run.
+lines. Hosted workflows had not been run at the time of this reference check;
+the product matrix passed later on 2026-11-10 (see development.md).
 
 At initial implementation, the operational `10-node-app-workflow.md` used
 `release: published`, while the basic main-app design showed tag push. The
@@ -59,7 +60,8 @@ the product design; the shared UTF-16 preference is not silently substituted.
 Initial verification covers metadata and local links, script syntax, and the
 missing-runtime build rejection. It predates the M1 implementation. Current M1
 tests and artifact execution are recorded in development.md. Node 22 and 26
-have passed locally; Node 24 execution and hosted CI remain pending.
+passed locally; the later GitHub Actions matrix passed Node 22/24/26 across
+Ubuntu/macOS/Windows on 2026-11-10.
 
 ## Release infrastructure maintenance (2026-11-06)
 
@@ -97,6 +99,6 @@ Current primary references checked:
 
 Adjacent approved maintenance adopted: clean staging, an exact final-file set,
 minimum-runtime verification, and least-authority workflow permissions. The
-later self-review correction changes the trigger to tag push. Local actionlint,
-Node 24 execution, and hosted OS/Node acceptance remain pending; the run record
-is in development.md.
+later self-review correction changes the trigger to tag push. Local actionlint
+and the product's hosted Node 22/24/26 × Ubuntu/macOS/Windows acceptance are
+recorded in development.md.

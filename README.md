@@ -4,14 +4,12 @@ Measure the size and composition of an entire Git repository: program code,
 Agent instructions, definitions, documents, text data, generated files, and
 binary assets. Repository totals and the source-code subset are both useful.
 
-**Status: M1 local acceptance passed on macOS with Node.js 22 and 26 under the
-documented filesystem scope.** Version `0.2.9` is in development; tag `v0.2.8`
-exists. The latest
-Windows matrix exposed a remaining failure in refusing output under `.git`;
-Git now checks whether the output parent is inside its administrative area.
-Local fixes pass all 45 tests, and the hosted rerun is pending. SR-01 is an explicit
-best-effort limitation. The product OS/Node matrix and companion skill's hosted
-acceptance remain open. See the
+**Status: `0.2.10` is the current development version; the latest tag is
+`v0.2.9`.** PR #11 merged and tagged the Windows `.git` output-protection fix.
+On the merged `0.2.9` tree, the GitHub Actions Node.js matrix succeeded across
+Ubuntu, macOS, and Windows on Node.js 22, 24, and 26, and local `npm test` passed
+all 45 tests. SR-01 remains an explicit best-effort limitation. Hosted
+acceptance for the companion skill is a separate task. See the
 [remediation plan](docs/self-review-remediation-plan.md). The JavaScript ESM
 CLI reads tracked files from the Git worktree and returns deterministic JSON.
 Target-language interpreters and compilers are not required.
@@ -65,8 +63,9 @@ grammar data. A parse failure keeps bytes and physical-line metrics, sets
 code/comment metrics to `null`, and adds a `LEXICAL_ERROR` warning. Parser
 choices, supported syntax, and dialect limits are in
 [language support](docs/language-support.md). The ruleset identifier is now
-`1.4.0`. M1 local acceptance passed under the documented filesystem scope;
-the product OS/Node matrix and companion skill's hosted acceptance remain open.
+`1.4.0`. M1 local acceptance passed under the documented filesystem scope; the
+product OS/Node matrix is now verified. The companion skill's hosted acceptance
+remains separate.
 
 ## Build and release
 
@@ -87,7 +86,8 @@ node bundle/miku-repo-scale.mjs --version
 the analysis and packaging tests. The runtime bundle exports `analyze(options)`
 and frozen `metadata` with `stage: "m1"` and `analysisAvailable: true`.
 
-Push a tag `v<package-version>` (currently `v0.2.9`). The
+For a new package version, push a tag `v<package-version>`; the latest tag is
+`v0.2.9`. The
 [release workflow](.github/workflows/release-cli-runtime-bundles.yml) checks
 out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 22, and creates or updates its GitHub Release with:
@@ -96,9 +96,9 @@ out that exact tag, builds on Node.js 26, verifies the final assets on Node.js
 - `miku-repo-scale-runtime-<tag-version>.mjs`
 - `miku-repo-scale-sources-<tag-version>.tgz`
 
-A positive integer suffix is also accepted, such as `v0.2.9.1`. Asset filenames
+A positive integer suffix is also accepted, such as `v0.2.10.1`. Asset filenames
 use the full tag version; embedded product metadata retains package version
-`0.2.9`. The workflow runs on `v*` tag pushes only. See
+`0.2.10`. The workflow runs on `v*` tag pushes only. See
 [development.md](docs/development.md) for local staging and verification.
 
 ## Project documents
