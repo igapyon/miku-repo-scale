@@ -9,7 +9,7 @@ updated: 2026-11-10
 
 ## 1. 対象と到達点
 
-[初期設計](design.md)を実装可能な作業単位へ分解する。利用者の判断により Node.js + Git の単体 `.mjs` runtime を維持し、敵対的な同時 path 置換に対する atomic containment は製品保証の対象外とする。この scope の M1 ローカル受入は macOS / Node.js 22・26 で完了した。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。v0.2.5 hosted release workflow と artifact handoff も完了した。現在の package version は開発中の 0.2.6。初回 Windows / Node.js 22 の artifact smoke は root path の誤判定で失敗し、Git の `--show-prefix` を使う修正を行った。ローカル全テストは通過し、hosted 再実行を待つ。companion repository の RSC-15c matrix と RSC-15d conversation/release review も残る。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
+[初期設計](design.md)を実装可能な作業単位へ分解する。利用者の判断により Node.js + Git の単体 `.mjs` runtime を維持し、敵対的な同時 path 置換に対する atomic containment は製品保証の対象外とする。この scope の M1 ローカル受入は macOS / Node.js 22・26 で完了した。RSC-02 選定、RSC-08 共通字句行分類、RSC-09〜12 の言語別 lexer、RSC-13 artifact parity はローカルで確認済み。v0.2.6 hosted release workflow と artifact handoff も完了した。現在の package version は開発中の 0.2.7。Windows matrix では root path の誤判定と CRLF による shell fixture offset 差を検出し、`--show-prefix` による判定と `.gitattributes` の LF 指定を加えた。ローカル全テストは通過し、hosted 再実行を待つ。companion repository の RSC-15c matrix と RSC-15d conversation/release review も残る。現在利用できるコマンドと成果物は [development.md](development.md) に記載する。
 
 初期版は JavaScript ESM と Node.js に実装を集約する。対象 repository の Git tracked files の現在の内容を読み、形式・役割・用途を分類し、規模と計測範囲を JSON で返す。スキルは固定した同梱 CLI を呼び、結果を説明する。
 
@@ -320,7 +320,7 @@ TXT、HTML 内の script/style、空行や不正 record を含む JSONL、未知
 
 ## 6. 次に実装へ渡す単位
 
-**次は製品 3×3 OS/Node matrix の hosted 再実行と companion の RSC-15c matrix を確認し、RSC-15d release-readiness を閉じる。** 製品 v0.2.5 release と artifact handoff は完了し、現在 package version 0.2.6 を開発中。Windows root 誤判定はローカル修正済みだが、hosted 確認は未完了。SR-01 は best-effort の残存リスクとして[対応計画](self-review-remediation-plan.md)に記録した。製品 matrix と companion hosted matrix の結果が未確認のため、全体の最終受入は継続中。
+**次は製品 3×3 OS/Node matrix の hosted 再実行と companion の RSC-15c matrix を確認し、RSC-15d release-readiness を閉じる。** 製品 v0.2.6 release と artifact handoff は完了し、現在 package version 0.2.7 を開発中。Windows root 誤判定と fixture line-ending 差はローカル修正済みだが、hosted 確認は未完了。SR-01 は best-effort の残存リスクとして[対応計画](self-review-remediation-plan.md)に記録した。製品 matrix と companion hosted matrix の結果が未確認のため、全体の最終受入は継続中。
 
 この順序により、TXT/HTML/JSON/JSONL/Markdown/YAML とその他のテキストの基本計測、TypeScript の形式識別、指示ソースの分類を初期の成果に含めつつ、後続のコード・コメント解析と配布に同じ契約を使える。
 
