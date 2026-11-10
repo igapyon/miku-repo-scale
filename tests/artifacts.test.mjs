@@ -153,7 +153,8 @@ test("runtime smoke rejects artifacts with stale embedded metadata", (t) => {
 test("source archive contains the curated build sources and licenses", () => {
   const paths = artifactPaths();
   checkSources(paths.sources);
-  const entries = execFileSync("tar", ["-tzf", paths.sources], { encoding: "utf8" }).trimEnd().split("\n");
+  const entries = execFileSync("tar", ["-tzf", paths.sources], { encoding: "utf8" })
+    .replace(/\r\n/gu, "\n").trimEnd().split("\n");
   for (const name of ["src/cli.mjs", "src/runtime.mjs", "scripts/build.mjs", "schemas/result-v1.schema.json", "schemas/config-v1.schema.json", "package-lock.json", "LICENSE", "THIRD_PARTY_NOTICES.md"]) {
     assert.ok(entries.includes(name), name);
   }

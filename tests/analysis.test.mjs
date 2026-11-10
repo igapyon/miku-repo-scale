@@ -10,7 +10,7 @@ import { analyzeWithFilesystemAdapter } from "../src/analyze.mjs";
 import { classifyPath, validateConfig } from "../src/classification.mjs";
 import { assertResultInvariants, stableJson } from "../src/contracts.mjs";
 import { createFilesystemAccessAdapter } from "../src/file-access.mjs";
-import { parseLsFiles, stripGitLineEnding } from "../src/git-inventory.mjs";
+import { isInsideGitAdministration, parseLsFiles, stripGitLineEnding } from "../src/git-inventory.mjs";
 import { countPhysicalLines, mapPhysicalLines } from "../src/physical-lines.mjs";
 
 function temporaryDirectory(t) {
@@ -112,6 +112,11 @@ test("Git text output strips LF and Windows CRLF terminators", () => {
   assert.equal(stripGitLineEnding("false\r\n", "win32"), "false");
   assert.equal(stripGitLineEnding("directory\r\n", "darwin"), "directory\r");
   assert.equal(stripGitLineEnding("directory", "win32"), "directory");
+});
+
+test("Git administration path checks are case-insensitive on Windows", () => {
+  assert.equal(isInsideGitAdministration("C:\\Repo\\.git\\report.json", "c:/repo/.git", "C:\\Repo\\.git", "win32"), true);
+  assert.equal(isInsideGitAdministration("C:\\Repo\\.git-backup\\report.json", "C:\\Repo\\.git", "C:\\Repo\\.git", "win32"), false);
 });
 
 test("empty repository, empty text, BOM-only text, and YAML keep zero distinct from null", (t) => {
@@ -419,7 +424,7 @@ test("ignore metadata identifies info/exclude and global rules and honors negati
   const globalIgnore = join(repository, "global excludes.txt");
   const globalConfig = join(directory, "git-config");
   writeFileSync(globalIgnore, "global.bin\n");
-  writeFileSync(globalConfig, `[core]\n\texcludesFile = ${globalIgnore}\n`);
+  writeFileSync(globalConfig, `[core]\n\texcludesFile = ${globalIgnore.replaceAll("\\", "/")}\n`);
   writeFileSync(join(repository, "ignored.log"), "ignored\n");
   writeFileSync(join(repository, "keep.log"), "visible\n");
   writeFileSync(join(repository, "info.bin"), Buffer.from([0x00]));
